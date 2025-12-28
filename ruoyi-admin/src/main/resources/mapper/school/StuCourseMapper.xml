@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.school.mapper.StuCourseMapper">
+    
+    <resultMap type="StuCourse" id="StuCourseResult">
+        <result property="courseId"    column="course_id"    />
+        <result property="courseName"    column="course_name"    />
+        <result property="credit"    column="credit"    />
+        <result property="creditHours"    column="credit_hours"    />
+        <result property="deptId"    column="dept_id"    />
+    </resultMap>
+
+    <sql id="selectStuCourseVo">
+        select course_id, course_name, credit, credit_hours, dept_id from stu_course
+    </sql>
+
+    <select id="selectStuCourseList" parameterType="StuCourse" resultMap="StuCourseResult">
+        <include refid="selectStuCourseVo"/>
+        <where>  
+            <if test="courseName != null  and courseName != ''"> and course_name like concat('%', #{courseName}, '%')</if>
+            <if test="credit != null "> and credit = #{credit}</if>
+            <if test="creditHours != null "> and credit_hours = #{creditHours}</if>
+            <if test="deptId != null  and deptId != ''"> and dept_id = #{deptId}</if>
+        </where>
+    </select>
+    
+    <select id="selectStuCourseByCourseId" parameterType="String" resultMap="StuCourseResult">
+        <include refid="selectStuCourseVo"/>
+        where course_id = #{courseId}
+    </select>
+
+    <insert id="insertStuCourse" parameterType="StuCourse">
+        insert into stu_course
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">course_id,</if>
+            <if test="courseName != null and courseName != ''">course_name,</if>
+            <if test="credit != null">credit,</if>
+            <if test="creditHours != null">credit_hours,</if>
+            <if test="deptId != null">dept_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">#{courseId},</if>
+            <if test="courseName != null and courseName != ''">#{courseName},</if>
+            <if test="credit != null">#{credit},</if>
+            <if test="creditHours != null">#{creditHours},</if>
+            <if test="deptId != null">#{deptId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateStuCourse" parameterType="StuCourse">
+        update stu_course
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="courseName != null and courseName != ''">course_name = #{courseName},</if>
+            <if test="credit != null">credit = #{credit},</if>
+            <if test="creditHours != null">credit_hours = #{creditHours},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+        </trim>
+        where course_id = #{courseId}
+    </update>
+
+    <delete id="deleteStuCourseByCourseId" parameterType="String">
+        delete from stu_course where course_id = #{courseId}
+    </delete>
+
+    <delete id="deleteStuCourseByCourseIds" parameterType="String">
+        delete from stu_course where course_id in 
+        <foreach item="courseId" collection="array" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+    </delete>
+</mapper>

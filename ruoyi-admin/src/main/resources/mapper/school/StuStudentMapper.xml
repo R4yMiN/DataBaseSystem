@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.school.mapper.StuStudentMapper">
+    
+    <resultMap type="StuStudent" id="StuStudentResult">
+        <result property="studentId"    column="student_id"    />
+        <result property="name"    column="name"    />
+        <result property="sex"    column="sex"    />
+        <result property="dateOfBirth"    column="date_of_birth"    />
+        <result property="nativePlace"    column="native_place"    />
+        <result property="mobilePhone"    column="mobile_phone"    />
+        <result property="deptId"    column="dept_id"    />
+    </resultMap>
+
+    <sql id="selectStuStudentVo">
+        select student_id, name, sex, date_of_birth, native_place, mobile_phone, dept_id from stu_student
+    </sql>
+
+    <select id="selectStuStudentList" parameterType="StuStudent" resultMap="StuStudentResult">
+        <include refid="selectStuStudentVo"/>
+        <where>  
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="sex != null  and sex != ''"> and sex = #{sex}</if>
+            <if test="dateOfBirth != null "> and date_of_birth = #{dateOfBirth}</if>
+            <if test="nativePlace != null  and nativePlace != ''"> and native_place = #{nativePlace}</if>
+            <if test="mobilePhone != null  and mobilePhone != ''"> and mobile_phone = #{mobilePhone}</if>
+            <if test="deptId != null  and deptId != ''"> and dept_id = #{deptId}</if>
+        </where>
+    </select>
+    
+    <select id="selectStuStudentByStudentId" parameterType="String" resultMap="StuStudentResult">
+        <include refid="selectStuStudentVo"/>
+        where student_id = #{studentId}
+    </select>
+
+    <insert id="insertStuStudent" parameterType="StuStudent">
+        insert into stu_student
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="name != null and name != ''">name,</if>
+            <if test="sex != null">sex,</if>
+            <if test="dateOfBirth != null">date_of_birth,</if>
+            <if test="nativePlace != null">native_place,</if>
+            <if test="mobilePhone != null">mobile_phone,</if>
+            <if test="deptId != null">dept_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="sex != null">#{sex},</if>
+            <if test="dateOfBirth != null">#{dateOfBirth},</if>
+            <if test="nativePlace != null">#{nativePlace},</if>
+            <if test="mobilePhone != null">#{mobilePhone},</if>
+            <if test="deptId != null">#{deptId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateStuStudent" parameterType="StuStudent">
+        update stu_student
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="dateOfBirth != null">date_of_birth = #{dateOfBirth},</if>
+            <if test="nativePlace != null">native_place = #{nativePlace},</if>
+            <if test="mobilePhone != null">mobile_phone = #{mobilePhone},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+        </trim>
+        where student_id = #{studentId}
+    </update>
+
+    <delete id="deleteStuStudentByStudentId" parameterType="String">
+        delete from stu_student where student_id = #{studentId}
+    </delete>
+
+    <delete id="deleteStuStudentByStudentIds" parameterType="String">
+        delete from stu_student where student_id in 
+        <foreach item="studentId" collection="array" open="(" separator="," close=")">
+            #{studentId}
+        </foreach>
+    </delete>
+</mapper>

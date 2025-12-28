@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.school.mapper.StuTeacherMapper">
+    
+    <resultMap type="StuTeacher" id="StuTeacherResult">
+        <result property="staffId"    column="staff_id"    />
+        <result property="name"    column="name"    />
+        <result property="sex"    column="sex"    />
+        <result property="dateOfBirth"    column="date_of_birth"    />
+        <result property="professionalRanks"    column="professional_ranks"    />
+        <result property="salary"    column="salary"    />
+        <result property="deptId"    column="dept_id"    />
+    </resultMap>
+
+    <sql id="selectStuTeacherVo">
+        select staff_id, name, sex, date_of_birth, professional_ranks, salary, dept_id from stu_teacher
+    </sql>
+
+    <select id="selectStuTeacherList" parameterType="StuTeacher" resultMap="StuTeacherResult">
+        <include refid="selectStuTeacherVo"/>
+        <where>  
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="sex != null  and sex != ''"> and sex = #{sex}</if>
+            <if test="dateOfBirth != null "> and date_of_birth = #{dateOfBirth}</if>
+            <if test="professionalRanks != null  and professionalRanks != ''"> and professional_ranks = #{professionalRanks}</if>
+            <if test="salary != null "> and salary = #{salary}</if>
+            <if test="deptId != null  and deptId != ''"> and dept_id = #{deptId}</if>
+        </where>
+    </select>
+    
+    <select id="selectStuTeacherByStaffId" parameterType="String" resultMap="StuTeacherResult">
+        <include refid="selectStuTeacherVo"/>
+        where staff_id = #{staffId}
+    </select>
+
+    <insert id="insertStuTeacher" parameterType="StuTeacher">
+        insert into stu_teacher
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="staffId != null">staff_id,</if>
+            <if test="name != null and name != ''">name,</if>
+            <if test="sex != null">sex,</if>
+            <if test="dateOfBirth != null">date_of_birth,</if>
+            <if test="professionalRanks != null">professional_ranks,</if>
+            <if test="salary != null">salary,</if>
+            <if test="deptId != null">dept_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="staffId != null">#{staffId},</if>
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="sex != null">#{sex},</if>
+            <if test="dateOfBirth != null">#{dateOfBirth},</if>
+            <if test="professionalRanks != null">#{professionalRanks},</if>
+            <if test="salary != null">#{salary},</if>
+            <if test="deptId != null">#{deptId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateStuTeacher" parameterType="StuTeacher">
+        update stu_teacher
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="dateOfBirth != null">date_of_birth = #{dateOfBirth},</if>
+            <if test="professionalRanks != null">professional_ranks = #{professionalRanks},</if>
+            <if test="salary != null">salary = #{salary},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+        </trim>
+        where staff_id = #{staffId}
+    </update>
+
+    <delete id="deleteStuTeacherByStaffId" parameterType="String">
+        delete from stu_teacher where staff_id = #{staffId}
+    </delete>
+
+    <delete id="deleteStuTeacherByStaffIds" parameterType="String">
+        delete from stu_teacher where staff_id in 
+        <foreach item="staffId" collection="array" open="(" separator="," close=")">
+            #{staffId}
+        </foreach>
+    </delete>
+</mapper>

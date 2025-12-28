@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.school.mapper.StuSelectionMapper">
+    
+    <resultMap type="StuSelection" id="StuSelectionResult">
+        <result property="selectionId"    column="selection_id"    />
+        <result property="studentId"    column="student_id"    />
+        <result property="classId"    column="class_id"    />
+        <result property="normalScore"    column="normal_score"    />
+        <result property="testScore"    column="test_score"    />
+        <result property="totalScore"    column="total_score"    />
+    </resultMap>
+
+    <sql id="selectStuSelectionVo">
+        select selection_id, student_id, class_id, normal_score, test_score, total_score from stu_selection
+    </sql>
+
+    <select id="selectStuSelectionList" parameterType="StuSelection" resultMap="StuSelectionResult">
+        <include refid="selectStuSelectionVo"/>
+        <where>  
+            <if test="studentId != null  and studentId != ''"> and student_id = #{studentId}</if>
+            <if test="classId != null "> and class_id = #{classId}</if>
+            <if test="normalScore != null "> and normal_score = #{normalScore}</if>
+            <if test="testScore != null "> and test_score = #{testScore}</if>
+            <if test="totalScore != null "> and total_score = #{totalScore}</if>
+        </where>
+    </select>
+    
+    <select id="selectStuSelectionBySelectionId" parameterType="Long" resultMap="StuSelectionResult">
+        <include refid="selectStuSelectionVo"/>
+        where selection_id = #{selectionId}
+    </select>
+
+    <insert id="insertStuSelection" parameterType="StuSelection" useGeneratedKeys="true" keyProperty="selectionId">
+        insert into stu_selection
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null and studentId != ''">student_id,</if>
+            <if test="classId != null">class_id,</if>
+            <if test="normalScore != null">normal_score,</if>
+            <if test="testScore != null">test_score,</if>
+            <if test="totalScore != null">total_score,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null and studentId != ''">#{studentId},</if>
+            <if test="classId != null">#{classId},</if>
+            <if test="normalScore != null">#{normalScore},</if>
+            <if test="testScore != null">#{testScore},</if>
+            <if test="totalScore != null">#{totalScore},</if>
+         </trim>
+    </insert>
+
+    <update id="updateStuSelection" parameterType="StuSelection">
+        update stu_selection
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null and studentId != ''">student_id = #{studentId},</if>
+            <if test="classId != null">class_id = #{classId},</if>
+            <if test="normalScore != null">normal_score = #{normalScore},</if>
+            <if test="testScore != null">test_score = #{testScore},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
+        </trim>
+        where selection_id = #{selectionId}
+    </update>
+
+    <delete id="deleteStuSelectionBySelectionId" parameterType="Long">
+        delete from stu_selection where selection_id = #{selectionId}
+    </delete>
+
+    <delete id="deleteStuSelectionBySelectionIds" parameterType="String">
+        delete from stu_selection where selection_id in 
+        <foreach item="selectionId" collection="array" open="(" separator="," close=")">
+            #{selectionId}
+        </foreach>
+    </delete>
+</mapper>
