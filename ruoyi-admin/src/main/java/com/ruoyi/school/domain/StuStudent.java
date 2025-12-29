@@ -9,7 +9,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 学生对象 stu_student
- * 
+ *
  * @author ruoyi
  * @date 2025-12-24
  */
@@ -45,72 +45,85 @@ public class StuStudent extends BaseEntity
     @Excel(name = "院系号")
     private String deptId;
 
-    public void setStudentId(String studentId) 
+    /** 关联系统用户ID (这是我们手动增加的关联字段) */
+    private Long userId;
+
+    public void setUserId(Long userId)
+    {
+        this.userId = userId;
+    }
+
+    public Long getUserId()
+    {
+        return userId;
+    }
+
+    public void setStudentId(String studentId)
     {
         this.studentId = studentId;
     }
 
-    public String getStudentId() 
+    public String getStudentId()
     {
         return studentId;
     }
 
-    public void setName(String name) 
+    public void setName(String name)
     {
         this.name = name;
     }
 
-    public String getName() 
+    public String getName()
     {
         return name;
     }
 
-    public void setSex(String sex) 
+    public void setSex(String sex)
     {
         this.sex = sex;
     }
 
-    public String getSex() 
+    public String getSex()
     {
         return sex;
     }
 
-    public void setDateOfBirth(Date dateOfBirth) 
+    public void setDateOfBirth(Date dateOfBirth)
     {
         this.dateOfBirth = dateOfBirth;
     }
 
-    public Date getDateOfBirth() 
+    public Date getDateOfBirth()
     {
         return dateOfBirth;
     }
 
-    public void setNativePlace(String nativePlace) 
+    public void setNativePlace(String nativePlace)
     {
         this.nativePlace = nativePlace;
     }
 
-    public String getNativePlace() 
+    public String getNativePlace()
     {
         return nativePlace;
     }
 
-    public void setMobilePhone(String mobilePhone) 
+    public void setMobilePhone(String mobilePhone)
     {
         this.mobilePhone = mobilePhone;
     }
 
-    public String getMobilePhone() 
+    public String getMobilePhone()
     {
         return mobilePhone;
     }
 
-    public void setDeptId(String deptId) 
+    public void setDeptId(String deptId)
     {
         this.deptId = deptId;
     }
 
-    public String getDeptId() 
+    public String getDeptId()
     {
         return deptId;
     }
@@ -118,13 +131,14 @@ public class StuStudent extends BaseEntity
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-            .append("studentId", getStudentId())
-            .append("name", getName())
-            .append("sex", getSex())
-            .append("dateOfBirth", getDateOfBirth())
-            .append("nativePlace", getNativePlace())
-            .append("mobilePhone", getMobilePhone())
-            .append("deptId", getDeptId())
-            .toString();
+                .append("studentId", getStudentId())
+                .append("name", getName())
+                .append("sex", getSex())
+                .append("dateOfBirth", getDateOfBirth())
+                .append("nativePlace", getNativePlace())
+                .append("mobilePhone", getMobilePhone())
+                .append("deptId", getDeptId())
+                .append("userId", getUserId()) // 打印时也要加上这个
+                .toString();
     }
 }
