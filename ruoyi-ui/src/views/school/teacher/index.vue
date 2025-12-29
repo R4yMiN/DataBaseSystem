@@ -9,6 +9,12 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="性别" prop="sex">
+        <el-radio-group v-model="form.sex">
+          <el-radio label="0">男</el-radio>
+          <el-radio label="1">女</el-radio>
+        </el-radio-group>
+      </el-form-item>
       <el-form-item label="出生日期" prop="dateOfBirth">
         <el-date-picker clearable
           v-model="queryParams.dateOfBirth"
@@ -144,6 +150,13 @@
         </el-form-item>
         <el-form-item label="姓名" prop="name">
           <el-input v-model="form.name" placeholder="请输入姓名" />
+        </el-form-item>
+        <el-form-item label="性别" prop="sex">
+          <el-radio-group v-model="form.sex">
+            <!-- 若依标准：0代表男，1代表女 -->
+            <el-radio label="0">男</el-radio>
+            <el-radio label="1">女</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="出生日期" prop="dateOfBirth">
           <el-date-picker clearable
