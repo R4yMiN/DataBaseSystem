@@ -164,9 +164,6 @@
         <el-form-item label="课程容量" prop="capacity">
           <el-input v-model="form.capacity" placeholder="请输入课程容量" />
         </el-form-item>
-        <el-form-item label="已选人数" prop="selectedNum">
-          <el-input v-model="form.selectedNum" placeholder="请输入已选人数" />
-        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -225,6 +222,9 @@ export default {
         ],
         staffId: [
           { required: true, message: "工号不能为空", trigger: "blur" }
+        ],
+        capacity: [
+          { required: true, message: "课程容量不能为空", trigger: "blur" }
         ],
       }
     }
