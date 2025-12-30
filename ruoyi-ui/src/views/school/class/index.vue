@@ -1,6 +1,14 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="开课标识" prop="classId">
+        <el-input
+          v-model="queryParams.classId"
+          placeholder="请输入开课标识"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
       <el-form-item label="学期" prop="semester">
         <el-input
           v-model="queryParams.semester"
@@ -9,10 +17,10 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="课名" prop="courseId">
+      <el-form-item label="课号" prop="courseId">
         <el-input
           v-model="queryParams.courseId"
-          placeholder="请输入课名"
+          placeholder="请输入课号"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -29,6 +37,22 @@
         <el-input
           v-model="queryParams.classTime"
           placeholder="请输入上课时间"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="课程容量" prop="capacity">
+        <el-input
+          v-model="queryParams.capacity"
+          placeholder="请输入课程容量"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="已选人数" prop="selectedNum">
+        <el-input
+          v-model="queryParams.selectedNum"
+          placeholder="请输入已选人数"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -89,9 +113,11 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="开课标识" align="center" prop="classId" />
       <el-table-column label="学期" align="center" prop="semester" />
-      <el-table-column label="课名" align="center" prop="courseId" />
+      <el-table-column label="课号" align="center" prop="courseId" />
       <el-table-column label="工号" align="center" prop="staffId" />
       <el-table-column label="上课时间" align="center" prop="classTime" />
+      <el-table-column label="课程容量" align="center" prop="capacity" />
+      <el-table-column label="已选人数" align="center" prop="selectedNum" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -126,14 +152,20 @@
         <el-form-item label="学期" prop="semester">
           <el-input v-model="form.semester" placeholder="请输入学期" />
         </el-form-item>
-        <el-form-item label="课名" prop="courseId">
-          <el-input v-model="form.courseId" placeholder="请输入课名" />
+        <el-form-item label="课号" prop="courseId">
+          <el-input v-model="form.courseId" placeholder="请输入课号" />
         </el-form-item>
         <el-form-item label="工号" prop="staffId">
           <el-input v-model="form.staffId" placeholder="请输入工号" />
         </el-form-item>
         <el-form-item label="上课时间" prop="classTime">
           <el-input v-model="form.classTime" placeholder="请输入上课时间" />
+        </el-form-item>
+        <el-form-item label="课程容量" prop="capacity">
+          <el-input v-model="form.capacity" placeholder="请输入课程容量" />
+        </el-form-item>
+        <el-form-item label="已选人数" prop="selectedNum">
+          <el-input v-model="form.selectedNum" placeholder="请输入已选人数" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -173,10 +205,13 @@ export default {
       queryParams: {
         pageNum: 1,
         pageSize: 10,
+        classId: null,
         semester: null,
         courseId: null,
         staffId: null,
-        classTime: null
+        classTime: null,
+        capacity: null,
+        selectedNum: null
       },
       // 表单参数
       form: {},
@@ -186,7 +221,7 @@ export default {
           { required: true, message: "学期不能为空", trigger: "blur" }
         ],
         courseId: [
-          { required: true, message: "课名不能为空", trigger: "blur" }
+          { required: true, message: "课号不能为空", trigger: "blur" }
         ],
         staffId: [
           { required: true, message: "工号不能为空", trigger: "blur" }
@@ -219,7 +254,9 @@ export default {
         semester: null,
         courseId: null,
         staffId: null,
-        classTime: null
+        classTime: null,
+        capacity: null,
+        selectedNum: null
       }
       this.resetForm("form")
     },
