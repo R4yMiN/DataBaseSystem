@@ -23,7 +23,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
  * 开课Controller
- * 
+ *
  * @author ruoyi
  * @date 2025-12-30
  */
@@ -96,9 +96,22 @@ public class StuClassController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('school:class:remove')")
     @Log(title = "开课", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{classIds}")
+    @DeleteMapping("/{classIds}")
     public AjaxResult remove(@PathVariable Long[] classIds)
     {
         return toAjax(stuClassService.deleteStuClassByClassIds(classIds));
+    }
+
+    /**
+     * 随机抽签剔除超员学生
+     * 权限暂定为 school:class:edit，你可以根据需要调整
+     */
+    @PreAuthorize("@ss.hasPermi('school:class:edit')")
+    @Log(title = "随机抽签", businessType = BusinessType.UPDATE)
+    @PostMapping("/randomKick")
+    public AjaxResult randomKick()
+    {
+        stuClassService.executeRandomKick();
+        return success("随机抽签完成，已清理所有超员课程！");
     }
 }

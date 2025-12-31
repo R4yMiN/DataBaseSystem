@@ -42,3 +42,11 @@ export function delClass(classId) {
     method: 'delete'
   })
 }
+
+//随机抽签剔除超员学生
+export function executeRandomKick() {
+  return request({
+    url:'/school/class/randomKick',
+    method:'post'
+  })
+}

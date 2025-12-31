@@ -79,4 +79,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{classId}
         </foreach>
     </delete>
+
+    <!--调用随机抽签存储过程-->
+    <select id="executeRandomKick" statementType="CALLABLE">
+        {call proc_random_kick_students()}
+    </select>
 </mapper>
+

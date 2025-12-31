@@ -58,4 +58,9 @@ public interface StuClassMapper
      * @return 结果
      */
     public int deleteStuClassByClassIds(Long[] classIds);
+
+    /**
+     * 执行随机抽签剔除逻辑
+     */
+    public int executeRandomKick();
 }

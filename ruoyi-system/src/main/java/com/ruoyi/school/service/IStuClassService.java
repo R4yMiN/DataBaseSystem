@@ -58,4 +58,9 @@ public interface IStuClassService
      * @return 结果
      */
     public int deleteStuClassByClassId(Long classId);
+
+    /**
+     * 随机抽签剔除超员学生
+     */
+    public void executeRandomKick();
 }

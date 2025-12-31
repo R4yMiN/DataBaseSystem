@@ -33,30 +33,7 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="上课时间" prop="classTime">
-        <el-input
-          v-model="queryParams.classTime"
-          placeholder="请输入上课时间"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="课程容量" prop="capacity">
-        <el-input
-          v-model="queryParams.capacity"
-          placeholder="请输入课程容量"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="已选人数" prop="selectedNum">
-        <el-input
-          v-model="queryParams.selectedNum"
-          placeholder="请输入已选人数"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
+      <!-- 搜索/重置按钮 -->
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -106,6 +83,17 @@
           v-hasPermi="['school:class:export']"
         >导出</el-button>
       </el-col>
+
+      <!-- 抽签按钮：保持在同一排 -->
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          icon="el-icon-magic-stick"
+          size="mini"
+          @click="handleRandomKick"
+        >结束选课并随机抽签</el-button>
+      </el-col>
+
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -137,7 +125,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -174,31 +162,22 @@
 </template>
 
 <script>
-import { listClass, getClass, delClass, addClass, updateClass } from "@/api/school/class"
+// 确保 API 中导出了 executeRandomKick
+import { listClass, getClass, delClass, addClass, updateClass, executeRandomKick } from "@/api/school/class"
 
 export default {
   name: "Class",
   data() {
     return {
-      // 遮罩层
       loading: true,
-      // 选中数组
       ids: [],
-      // 非单个禁用
       single: true,
-      // 非多个禁用
       multiple: true,
-      // 显示搜索条件
       showSearch: true,
-      // 总条数
       total: 0,
-      // 开课表格数据
       classList: [],
-      // 弹出层标题
       title: "",
-      // 是否显示弹出层
       open: false,
-      // 查询参数
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -210,22 +189,12 @@ export default {
         capacity: null,
         selectedNum: null
       },
-      // 表单参数
       form: {},
-      // 表单校验
       rules: {
-        semester: [
-          { required: true, message: "学期不能为空", trigger: "blur" }
-        ],
-        courseId: [
-          { required: true, message: "课号不能为空", trigger: "blur" }
-        ],
-        staffId: [
-          { required: true, message: "工号不能为空", trigger: "blur" }
-        ],
-        capacity: [
-          { required: true, message: "课程容量不能为空", trigger: "blur" }
-        ],
+        semester: [{ required: true, message: "学期不能为空", trigger: "blur" }],
+        courseId: [{ required: true, message: "课号不能为空", trigger: "blur" }],
+        staffId: [{ required: true, message: "工号不能为空", trigger: "blur" }],
+        capacity: [{ required: true, message: "课程容量不能为空", trigger: "blur" }],
       }
     }
   },
@@ -321,6 +290,15 @@ export default {
         this.getList()
         this.$modal.msgSuccess("删除成功")
       }).catch(() => {})
+    },
+    /** 随机抽签按钮操作（新增） */
+    handleRandomKick() {
+      this.$modal.confirm('警告：此操作将永久剔除所有课程中超出容量的学生，建议在选课结束后执行。确认开始抽签吗？').then(function() {
+        return executeRandomKick();
+      }).then(() => {
+        this.getList(); // 成功后刷新列表看人数变化
+        this.$modal.msgSuccess("随机抽签完成，已清理超员课程");
+      }).catch(() => {});
     },
     /** 导出按钮操作 */
     handleExport() {

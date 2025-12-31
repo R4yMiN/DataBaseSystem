@@ -90,4 +90,13 @@ public class StuClassServiceImpl implements IStuClassService
     {
         return stuClassMapper.deleteStuClassByClassId(classId);
     }
+
+    /**
+     * 随机抽签剔除超员学生
+     */
+    @Override
+    public void executeRandomKick()
+    {
+        stuClassMapper.executeRandomKick();
+    }
 }
