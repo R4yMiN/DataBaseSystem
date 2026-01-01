@@ -1,6 +1,6 @@
 package com.ruoyi.school.controller;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,57 +20,83 @@ public class StuClassController extends BaseController
     @Autowired
     private IStuClassService stuClassService;
 
-    /** 管理端列表查询 */
+    /**
+     * 1. 管理端列表 (教务老师看：看到的是每一条原始排课记录，方便修改具体时间)
+     */
     @PreAuthorize("@ss.hasPermi('school:class:list')")
     @GetMapping("/list")
     public TableDataInfo list(StuClass stuClass) {
         startPage();
-        return getDataTable(stuClassService.selectStuClassList(stuClass));
+        List<StuClass> list = stuClassService.selectStuClassList(stuClass);
+        return getDataTable(list);
     }
 
-    /** 学生端列表：脱敏 + 自动转换数字为时间文字 */
+    /**
+     * 2. 学生端列表 (核心：实现你说的 Group By 聚合逻辑)
+     * 作用：把多节课合并为一行，并提取时间地点
+     */
     @GetMapping("/studentList")
     public TableDataInfo studentList(StuClass stuClass) {
-        startPage();
+        // A. 查询所有原始排课数据
         List<StuClass> list = stuClassService.selectStuClassList(stuClass);
 
+        // B. 转换工具：数字转文字
         String[] days = {"", "周一", "周二", "周三", "周四", "周五", "周六", "周日"};
 
-        List<StuClass> safeList = list.stream().peek(item -> {
-            // 安全保护：如果数据库里这些数字是空的，给个默认值防止报错
-            Integer day = item.getDayOfWeek() == null ? 0 : item.getDayOfWeek();
-            Integer s = item.getLessonStart() == null ? 0 : item.getLessonStart();
-            Integer e = item.getLessonEnd() == null ? 0 : item.getLessonEnd();
-            Integer ws = item.getWeekStart() == null ? 0 : item.getWeekStart();
-            Integer we = item.getWeekEnd() == null ? 0 : item.getWeekEnd();
+        // C. 使用 Java 分组逻辑 (相当于 MySQL 的 GROUP BY course_id, staff_id)
+        Map<String, List<StuClass>> grouped = list.stream()
+                .collect(Collectors.groupingBy(c -> c.getCourseId() + "-" + c.getStaffId()));
 
-            // 拼装时间描述给前端显示
-            String timeDesc = String.format("%s 第%d-%d节 (%d-%d周)",
-                    (day > 0 && day < 8) ? days[day] : "时间待定", s, e, ws, we);
+        // D. 将分组后的数据重新组装成前端需要的格式
+        List<StuClass> resultList = new ArrayList<>();
 
-            item.setStaffId(null); // 隐藏老师工号，保护隐私
-            item.setClassTime(timeDesc); // 借用 classTime 字段传回拼好的文字
-        }).collect(Collectors.toList());
+        grouped.forEach((key, subList) -> {
+            // 拿每组的第一条数据作为基础（学期、容量等信息）
+            StuClass main = subList.get(0);
 
-        return getDataTable(safeList);
+            // 核心：把这组所有的 [时间+教室] 提取并拼接 (提取与放置的原理)
+            String fullTimeDesc = subList.stream()
+                    .map(t -> String.format("%s第%d-%d节[%s]",
+                            days[t.getDayOfWeek()], t.getLessonStart(), t.getLessonEnd(), t.getClassroomId()))
+                    .collect(Collectors.joining(" | "));
+
+            // 将拼好的长字符串（如：周一1-2节[101] | 周三3-4节[202]）塞给 classTime 字段显示
+            main.setClassTime(fullTimeDesc);
+            main.setStaffId(null); // 脱敏，隐藏老师工号
+
+            resultList.add(main);
+        });
+
+        return getDataTable(resultList);
     }
 
-    /** 获取详细信息（修复修改按钮 404 的关键！） */
-    @PreAuthorize("@ss.hasPermi('school:class:query')")
+    /**
+     * 3. 获取详细信息 (修改回显用)
+     */
     @GetMapping(value = "/{classId}")
     public AjaxResult getInfo(@PathVariable("classId") Long classId) {
         return success(stuClassService.selectStuClassByClassId(classId));
     }
 
-    /** 新增开课 */
+    /**
+     * 新增开课（自动绑定教师工号）
+     */
     @PreAuthorize("@ss.hasPermi('school:class:add')")
     @Log(title = "开课", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody StuClass stuClass) {
+    public AjaxResult add(@RequestBody StuClass stuClass)
+    {
+        // 关键点：如果工号为空（说明是老师在申请），则自动获取当前登录用户的用户名作为工号
+        if (stuClass.getStaffId() == null || stuClass.getStaffId().equals("")) {
+            stuClass.setStaffId(com.ruoyi.common.utils.SecurityUtils.getUsername());
+        }
+
         return toAjax(stuClassService.insertStuClass(stuClass));
     }
 
-    /** 修改开课 */
+    /**
+     * 5. 修改排课信息
+     */
     @PreAuthorize("@ss.hasPermi('school:class:edit')")
     @Log(title = "开课", businessType = BusinessType.UPDATE)
     @PutMapping
@@ -78,7 +104,9 @@ public class StuClassController extends BaseController
         return toAjax(stuClassService.updateStuClass(stuClass));
     }
 
-    /** 删除开课（修复删除按钮 404 的关键！） */
+    /**
+     * 6. 删除排课
+     */
     @PreAuthorize("@ss.hasPermi('school:class:remove')")
     @Log(title = "开课", businessType = BusinessType.DELETE)
     @DeleteMapping("/{classIds}")
@@ -86,12 +114,23 @@ public class StuClassController extends BaseController
         return toAjax(stuClassService.deleteStuClassByClassIds(classIds));
     }
 
-    /** 随机抽签 */
-    @PreAuthorize("@ss.hasPermi('school:class:kick')") // 只有拥有此权限的用户能点
-    @Log(title = "开课管理", businessType = BusinessType.UPDATE)
+    /**
+     * 7. 随机踢人 (教务专供)
+     */
+    @PreAuthorize("@ss.hasPermi('school:class:kick')")
     @PostMapping("/randomKick")
     public AjaxResult randomKick() {
         stuClassService.executeRandomKick();
-        return success("抽签清算成功");
+        return success("随机抽签清算成功");
+    }
+
+    /**
+     * 获取正式课程库列表，供老师点选
+     */
+    @GetMapping("/courseList")
+    public AjaxResult getCourseList()
+    {
+        // 还是用你原来的 stuClassService，只是调用我们新加的方法
+        return AjaxResult.success(stuClassService.selectAllCourseOptions());
     }
 }

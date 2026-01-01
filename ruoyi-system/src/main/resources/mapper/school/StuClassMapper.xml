@@ -114,4 +114,10 @@
     <select id="executeRandomKick" statementType="CALLABLE">
         {call proc_random_kick_students()}
     </select>
+
+
+    <select id="selectAllCourseOptions" resultType="map">
+        select course_id as courseId, course_name as courseName, credit
+        from stu_course
+    </select>
 </mapper>
