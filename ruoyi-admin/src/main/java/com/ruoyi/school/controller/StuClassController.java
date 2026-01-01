@@ -87,6 +87,8 @@ public class StuClassController extends BaseController
     }
 
     /** 随机抽签 */
+    @PreAuthorize("@ss.hasPermi('school:class:kick')") // 只有拥有此权限的用户能点
+    @Log(title = "开课管理", businessType = BusinessType.UPDATE)
     @PostMapping("/randomKick")
     public AjaxResult randomKick() {
         stuClassService.executeRandomKick();

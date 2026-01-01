@@ -42,3 +42,11 @@ export function delClass(classId) {
     method: 'delete'
   })
 }
+
+//踢人过程
+export function executeRandomKick() {
+  return request({
+    url: '/school/class/randomKick',
+    method: 'post'
+  })
+}
