@@ -27,9 +27,21 @@ public class StuClass extends BaseEntity
     @Excel(name = "课号")
     private String courseId;
 
+    /** 课程名*/
+    @Excel(name = "课程名称")
+    private String courseName;
+
     /** 工号 */
     @Excel(name = "工号")
     private String staffId;
+
+    /** 班级号 */
+    @Excel(name = "班级号")
+    private String classSection;
+
+    /**教师姓名*/
+    @Excel(name = "老师姓名")
+    private String staffName;
 
     /** 星期几 (1-7) */
     @Excel(name = "星期几")
@@ -132,6 +144,18 @@ public class StuClass extends BaseEntity
                 .append("classTime", getClassTime())
                 .append("capacity", getCapacity())
                 .append("selectedNum", getSelectedNum())
+                .append("staffName", getStaffName())
                 .toString();
     }
+
+    public void setCourseName(String courseName) { this.courseName = courseName; }
+    public String getCourseName() { return courseName; }
+
+    public void setClassSection(String classSection) { this.classSection = classSection; }
+    public String getClassSection() { return classSection; }
+
+    public void setStaffName(String staffName) { this.staffName = staffName; }
+    public String getStaffName() { return staffName; }
+
+
 }

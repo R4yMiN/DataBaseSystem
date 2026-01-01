@@ -26,6 +26,15 @@ public class StuClassController extends BaseController
     @PreAuthorize("@ss.hasPermi('school:class:list')")
     @GetMapping("/list")
     public TableDataInfo list(StuClass stuClass) {
+        // 1. 获取当前登录用户信息
+        String username = com.ruoyi.common.utils.SecurityUtils.getUsername();
+        boolean isAdmin = com.ruoyi.common.utils.SecurityUtils.isAdmin(com.ruoyi.common.utils.SecurityUtils.getUserId());
+
+        // 2. 权限逻辑：如果不是管理员，强行只能查自己的工号
+        if (!isAdmin) {
+            stuClass.setStaffId(username);
+        }
+
         startPage();
         List<StuClass> list = stuClassService.selectStuClassList(stuClass);
         return getDataTable(list);
