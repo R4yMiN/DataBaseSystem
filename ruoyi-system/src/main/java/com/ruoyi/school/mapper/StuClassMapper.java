@@ -2,6 +2,7 @@ package com.ruoyi.school.mapper;
 
 import java.util.List;
 import com.ruoyi.school.domain.StuClass;
+import java.util.Map;
 
 /**
  * 开课Mapper接口
@@ -29,4 +30,9 @@ public interface StuClassMapper
 
     /** 减少已选人数 (修改 stu_class 表) */
     public int minusSelectedNum(Long classId);
+
+    /**
+     * 从 stu_course 表里把所有课查出来
+     */
+    public List<Map<String, Object>> selectAllCourseOptions();
 }
