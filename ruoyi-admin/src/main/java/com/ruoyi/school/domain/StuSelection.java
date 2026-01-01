@@ -110,4 +110,7 @@ public class StuSelection extends BaseEntity
             .append("totalScore", getTotalScore())
             .toString();
     }
+
+
+
 }

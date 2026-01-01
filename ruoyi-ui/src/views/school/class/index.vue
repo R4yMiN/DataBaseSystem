@@ -146,8 +146,34 @@
         <el-form-item label="工号" prop="staffId">
           <el-input v-model="form.staffId" placeholder="请输入工号" />
         </el-form-item>
-        <el-form-item label="上课时间" prop="classTime">
-          <el-input v-model="form.classTime" placeholder="请输入上课时间" />
+        <!-- 修改对话框中的表单内容 -->
+        <el-form-item label="上课时间">
+          <el-row :gutter="10">
+            <el-col :span="8">
+              <el-select v-model="form.dayOfWeek" placeholder="星期">
+                <el-option label="周一" :value="1" />
+                <el-option label="周二" :value="2" />
+                <el-option label="周三" :value="3" />
+                <el-option label="周四" :value="4" />
+                <el-option label="周五" :value="5" />
+              </el-select>
+            </el-col>
+            <el-col :span="8">
+              <el-input-number v-model="form.lessonStart" :min="1" :max="12" placeholder="开始节" />
+            </el-col>
+            <el-col :span="8">
+              <el-input-number v-model="form.lessonEnd" :min="1" :max="12" placeholder="结束节" />
+            </el-col>
+          </el-row>
+        </el-form-item>
+
+        <el-form-item label="上课周次">
+          <el-input-number v-model="form.weekStart" :min="1" :max="20" /> 到
+          <el-input-number v-model="form.weekEnd" :min="1" :max="20" /> 周
+        </el-form-item>
+
+        <el-form-item label="安排教室" prop="classroomId">
+          <el-input v-model="form.classroomId" placeholder="请输入教室号（如101）" />
         </el-form-item>
         <el-form-item label="课程容量" prop="capacity">
           <el-input v-model="form.capacity" placeholder="请输入课程容量" />

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.school.mapper.StuSelectionMapper">
-    
+
     <resultMap type="StuSelection" id="StuSelectionResult">
         <result property="selectionId"    column="selection_id"    />
         <result property="studentId"    column="student_id"    />
@@ -17,9 +17,32 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select selection_id, student_id, class_id, normal_score, test_score, total_score from stu_selection
     </sql>
 
+    <!-- 1. 校验：检查是否重复选课 -->
+    <select id="checkAlreadySelected" resultType="int">
+        select count(*) from stu_selection
+        where student_id = #{studentId} and class_id = #{classId}
+    </select>
+
+    <!-- 2. 校验：学生个人时间冲突（最关键的数字化比对逻辑） -->
+    <select id="checkStudentTimeConflict" resultType="int">
+        SELECT count(*)
+        FROM stu_selection s
+        JOIN stu_class c ON s.class_id = c.class_id
+        WHERE s.student_id = #{studentId}
+        AND c.day_of_week = #{dayOfWeek}
+        <!-- 判定节次是否有重叠 -->
+        AND c.lesson_start &lt;= #{lessonEnd}
+        AND c.lesson_end &gt;= #{lessonStart}
+        <!-- 判定周次是否有重叠 -->
+        AND c.week_start &lt;= #{weekEnd}
+        AND c.week_end &gt;= #{weekStart}
+        <!-- 判定周类型是否冲突 (单双周判定) -->
+        AND (c.week_type = 0 OR #{weekType} = 0 OR c.week_type = #{weekType})
+    </select>
+
     <select id="selectStuSelectionList" parameterType="StuSelection" resultMap="StuSelectionResult">
         <include refid="selectStuSelectionVo"/>
-        <where>  
+        <where>
             <if test="studentId != null  and studentId != ''"> and student_id = #{studentId}</if>
             <if test="classId != null "> and class_id = #{classId}</if>
             <if test="normalScore != null "> and normal_score = #{normalScore}</if>
@@ -27,7 +50,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="totalScore != null "> and total_score = #{totalScore}</if>
         </where>
     </select>
-    
+
     <select id="selectStuSelectionBySelectionId" parameterType="Long" resultMap="StuSelectionResult">
         <include refid="selectStuSelectionVo"/>
         where selection_id = #{selectionId}
@@ -41,14 +64,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="normalScore != null">normal_score,</if>
             <if test="testScore != null">test_score,</if>
             <if test="totalScore != null">total_score,</if>
-         </trim>
+            create_time
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="studentId != null and studentId != ''">#{studentId},</if>
             <if test="classId != null">#{classId},</if>
             <if test="normalScore != null">#{normalScore},</if>
             <if test="testScore != null">#{testScore},</if>
             <if test="totalScore != null">#{totalScore},</if>
-         </trim>
+            sysdate()
+        </trim>
     </insert>
 
     <update id="updateStuSelection" parameterType="StuSelection">
@@ -67,8 +92,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from stu_selection where selection_id = #{selectionId}
     </delete>
 
-    <delete id="deleteStuSelectionBySelectionIds" parameterType="String">
-        delete from stu_selection where selection_id in 
+    <delete id="deleteStuSelectionBySelectionIds" parameterType="Long">
+        delete from stu_selection where selection_id in
         <foreach item="selectionId" collection="array" open="(" separator="," close=")">
             #{selectionId}
         </foreach>

@@ -1,36 +1,53 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.school.mapper.StuClassMapper">
-    
+
     <resultMap type="StuClass" id="StuClassResult">
         <result property="classId"    column="class_id"    />
         <result property="semester"    column="semester"    />
         <result property="courseId"    column="course_id"    />
         <result property="staffId"    column="staff_id"    />
-        <result property="classTime"    column="class_time"    />
+        <result property="dayOfWeek"    column="day_of_week"    />
+        <result property="lessonStart"    column="lesson_start"    />
+        <result property="lessonEnd"    column="lesson_end"    />
+        <result property="weekStart"    column="week_start"    />
+        <result property="weekEnd"    column="week_end"    />
+        <result property="weekType"    column="week_type"    />
+        <result property="classroomId"    column="classroom_id"    />
         <result property="capacity"    column="capacity"    />
         <result property="selectedNum"    column="selected_num"    />
     </resultMap>
 
     <sql id="selectStuClassVo">
-        select class_id, semester, course_id, staff_id, class_time, capacity, selected_num from stu_class
+        select class_id, semester, course_id, staff_id, day_of_week, lesson_start, lesson_end, week_start, week_end, week_type, classroom_id, capacity, selected_num from stu_class
     </sql>
+
+    <!-- 核心：排课冲突检查 -->
+    <select id="checkSchedulingConflict" parameterType="StuClass" resultType="int">
+        select count(*) from stu_class
+        <where>
+            and day_of_week = #{dayOfWeek}
+            and lesson_start &lt;= #{lessonEnd}
+            and lesson_end &gt;= #{lessonStart}
+            and week_start &lt;= #{weekEnd}
+            and week_end &gt;= #{weekStart}
+            and (week_type = 0 or #{weekType} = 0 or week_type = #{weekType})
+            and (classroom_id = #{classroomId} or staff_id = #{staffId})
+            <if test="classId != null"> and class_id != #{classId} </if>
+        </where>
+    </select>
 
     <select id="selectStuClassList" parameterType="StuClass" resultMap="StuClassResult">
         <include refid="selectStuClassVo"/>
-        <where>  
-            <if test="classId != null "> and class_id = #{classId}</if>
-            <if test="semester != null  and semester != ''"> and semester = #{semester}</if>
+        <where>
             <if test="courseId != null  and courseId != ''"> and course_id like concat('%', #{courseId}, '%')</if>
-            <if test="staffId != null  and staffId != ''"> and staff_id = #{staffId}</if>
-            <if test="classTime != null  and classTime != ''"> and class_time = #{classTime}</if>
-            <if test="capacity != null "> and capacity = #{capacity}</if>
-            <if test="selectedNum != null "> and selected_num = #{selectedNum}</if>
+            <if test="dayOfWeek != null "> and day_of_week = #{dayOfWeek}</if>
+            <if test="classroomId != null  and classroom_id != ''"> and classroom_id = #{classroomId}</if>
         </where>
     </select>
-    
+
     <select id="selectStuClassByClassId" parameterType="Long" resultMap="StuClassResult">
         <include refid="selectStuClassVo"/>
         where class_id = #{classId}
@@ -39,50 +56,62 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <insert id="insertStuClass" parameterType="StuClass" useGeneratedKeys="true" keyProperty="classId">
         insert into stu_class
         <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="semester != null and semester != ''">semester,</if>
-            <if test="courseId != null and courseId != ''">course_id,</if>
-            <if test="staffId != null and staffId != ''">staff_id,</if>
-            <if test="classTime != null">class_time,</if>
+            <if test="semester != null">semester,</if>
+            <if test="courseId != null">course_id,</if>
+            <if test="staffId != null">staff_id,</if>
+            <if test="dayOfWeek != null">day_of_week,</if>
+            <if test="lessonStart != null">lesson_start,</if>
+            <if test="lessonEnd != null">lesson_end,</if>
+            <if test="weekStart != null">week_start,</if>
+            <if test="weekEnd != null">week_end,</if>
+            <if test="weekType != null">week_type,</if>
+            <if test="classroomId != null">classroom_id,</if>
             <if test="capacity != null">capacity,</if>
             <if test="selectedNum != null">selected_num,</if>
-         </trim>
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="semester != null and semester != ''">#{semester},</if>
-            <if test="courseId != null and courseId != ''">#{courseId},</if>
-            <if test="staffId != null and staffId != ''">#{staffId},</if>
-            <if test="classTime != null">#{classTime},</if>
+            <if test="semester != null">#{semester},</if>
+            <if test="courseId != null">#{courseId},</if>
+            <if test="staffId != null">#{staffId},</if>
+            <if test="dayOfWeek != null">#{dayOfWeek},</if>
+            <if test="lessonStart != null">#{lessonStart},</if>
+            <if test="lessonEnd != null">#{lessonEnd},</if>
+            <if test="weekStart != null">#{weekStart},</if>
+            <if test="weekEnd != null">#{weekEnd},</if>
+            <if test="weekType != null">#{weekType},</if>
+            <if test="classroomId != null">#{classroomId},</if>
             <if test="capacity != null">#{capacity},</if>
             <if test="selectedNum != null">#{selectedNum},</if>
-         </trim>
+        </trim>
     </insert>
 
     <update id="updateStuClass" parameterType="StuClass">
         update stu_class
-        <trim prefix="SET" suffixOverrides=",">
-            <if test="semester != null and semester != ''">semester = #{semester},</if>
-            <if test="courseId != null and courseId != ''">course_id = #{courseId},</if>
-            <if test="staffId != null and staffId != ''">staff_id = #{staffId},</if>
-            <if test="classTime != null">class_time = #{classTime},</if>
+        <set>
+            <if test="dayOfWeek != null">day_of_week = #{dayOfWeek},</if>
+            <if test="lessonStart != null">lesson_start = #{lessonStart},</if>
+            <if test="lessonEnd != null">lesson_end = #{lessonEnd},</if>
+            <if test="weekStart != null">week_start = #{weekStart},</if>
+            <if test="weekEnd != null">week_end = #{weekEnd},</if>
+            <if test="weekType != null">week_type = #{weekType},</if>
+            <if test="classroomId != null">classroom_id = #{classroomId},</if>
             <if test="capacity != null">capacity = #{capacity},</if>
             <if test="selectedNum != null">selected_num = #{selectedNum},</if>
-        </trim>
+        </set>
         where class_id = #{classId}
     </update>
 
-    <delete id="deleteStuClassByClassId" parameterType="Long">
-        delete from stu_class where class_id = #{classId}
-    </delete>
+    <!-- 增加已选人数的方法 -->
+    <update id="plusSelectedNum">
+        update stu_class set selected_num = selected_num + 1 where class_id = #{classId}
+    </update>
 
-    <delete id="deleteStuClassByClassIds" parameterType="String">
-        delete from stu_class where class_id in 
-        <foreach item="classId" collection="array" open="(" separator="," close=")">
-            #{classId}
-        </foreach>
-    </delete>
+    <update id="minusSelectedNum">
+        update stu_class set selected_num = selected_num - 1 where class_id = #{classId}
+    </update>
 
-    <!--调用随机抽签存储过程-->
+    <!-- 随机抽签存储过程调用 -->
     <select id="executeRandomKick" statementType="CALLABLE">
         {call proc_random_kick_students()}
     </select>
 </mapper>
-

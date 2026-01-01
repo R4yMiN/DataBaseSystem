@@ -5,62 +5,28 @@ import com.ruoyi.school.domain.StuClass;
 
 /**
  * 开课Mapper接口
- * 
- * @author ruoyi
- * @date 2025-12-30
  */
-public interface StuClassMapper 
+public interface StuClassMapper
 {
-    /**
-     * 查询开课
-     * 
-     * @param classId 开课主键
-     * @return 开课
-     */
+    // ... 原有方法保持不变 ...
     public StuClass selectStuClassByClassId(Long classId);
-
-    /**
-     * 查询开课列表
-     * 
-     * @param stuClass 开课
-     * @return 开课集合
-     */
     public List<StuClass> selectStuClassList(StuClass stuClass);
-
-    /**
-     * 新增开课
-     * 
-     * @param stuClass 开课
-     * @return 结果
-     */
     public int insertStuClass(StuClass stuClass);
-
-    /**
-     * 修改开课
-     * 
-     * @param stuClass 开课
-     * @return 结果
-     */
     public int updateStuClass(StuClass stuClass);
-
-    /**
-     * 删除开课
-     * 
-     * @param classId 开课主键
-     * @return 结果
-     */
     public int deleteStuClassByClassId(Long classId);
-
-    /**
-     * 批量删除开课
-     * 
-     * @param classIds 需要删除的数据主键集合
-     * @return 结果
-     */
     public int deleteStuClassByClassIds(Long[] classIds);
+    public int executeRandomKick();
 
     /**
-     * 执行随机抽签剔除逻辑
+     * 检查排课冲突数量
+     * @param stuClass 排课信息
+     * @return 冲突数
      */
-    public int executeRandomKick();
+    public int checkSchedulingConflict(StuClass stuClass);
+
+    /** 增加已选人数 (修改 stu_class 表) */
+    public int plusSelectedNum(Long classId);
+
+    /** 减少已选人数 (修改 stu_class 表) */
+    public int minusSelectedNum(Long classId);
 }
