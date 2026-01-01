@@ -34,7 +34,22 @@
       <el-table v-loading="loading" :data="classList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="学期" align="center" prop="semester" />
-        <el-table-column label="课号" align="center" prop="courseId" />
+        <!-- 课号和课名一起显示 -->
+        <el-table-column label="课程信息" align="left" width="200">
+          <template slot-scope="scope">
+            <div style="font-weight: bold;">{{ scope.row.courseName }}</div>
+            <div style="font-size: 12px; color: #999;">课号：{{ scope.row.courseId }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="班级号/课序" align="center" prop="classSection" />
+        <!-- 老师工号和姓名一起显示 -->
+        <el-table-column label="任课教师" align="center">
+          <template slot-scope="scope">
+            <!-- 如果 staffName 有值就显示名字，没值就显示工号保底 -->
+            <div style="font-weight: bold;">{{ scope.row.staffName || '未指定' }}</div>
+            <div style="font-size: 11px; color: #999;">工号：{{ scope.row.staffId }}</div>
+          </template>
+        </el-table-column>
         <el-table-column label="上课安排" align="center" min-width="200">
           <template slot-scope="scope">
             <span v-if="scope.row.dayOfWeek">{{ formatTimeDesc(scope.row) }}</span>
@@ -51,14 +66,36 @@
         </el-table-column>
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template slot-scope="scope">
-            <el-button v-if="isAdmin" size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">排课</el-button>
-            <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['school:class:remove']">删除</el-button>
+            <el-button v-if="isAdmin"
+                       size="mini"
+                       type="text"
+                       icon="el-icon-edit"
+                       @click="handleUpdate(scope.row)">
+              排课
+            </el-button>
+            <!-- 追加时段按钮 -->
+            <el-button
+              v-if="isAdmin"
+              size="mini"
+              type="text"
+              icon="el-icon-time"
+              @click="handleAppendTime(scope.row)"
+            >追加时段</el-button>
+            <el-button
+              size="isAdmin"
+              type="text"
+              icon="el-icon-delete"
+              @click="handleDelete(scope.row)"
+              v-hasPermi="['school:class:remove']">
+              删除
+            </el-button>
+
           </template>
         </el-table-column>
       </el-table>
     </div>
 
-    <!-- 3. 模式 B：7x12 可视化周课表 -->
+    <!-- 7x12 可视化周课表 -->
     <div v-else class="timetable-container">
       <table class="timetable">
         <thead>
@@ -70,12 +107,27 @@
         <tbody>
         <tr v-for="l in 12" :key="l">
           <td class="lesson-header">第 {{l}} 节</td>
-          <td v-for="d in 7" :key="d" class="course-cell">
-            <div v-for="c in getClassesAt(d, l)" :key="c.classId" class="course-card">
-              <div class="name">{{ c.courseId }}</div>
-              <div class="room">{{ c.classroomId }}</div>
+
+          <!-- 找到这一行 -->
+          <td v-for="dayIdx in 7" :key="dayIdx" class="course-cell">
+
+            <!-- getCellData 会根据星期和节次，从你刚才 JOIN 出来的结果里提取数据 -->
+            <div v-for="item in getCellData(dayIdx, l)" :key="item.classId" class="course-card">
+
+              <!-- 这里改掉：由 item.courseId 改为 item.courseName -->
+              <div class="name" style="font-weight: bold; color: #1890ff;">
+                {{ item.courseName }}
+              </div>
+
+              <!-- 显示地点 -->
+              <div class="room" style="font-size: 11px; color: #666;">
+                {{ item.classroomId }} 教室
+              </div>
+
             </div>
           </td>
+
+
         </tr>
         </tbody>
       </table>
@@ -103,7 +155,9 @@
           </el-row>
           <div class="selected-tip">当前选中：<el-tag size="small">{{ form.courseId || '请选择' }}</el-tag></div>
         </el-form-item>
-
+        <el-form-item label="班级号/课序" prop="classSection">
+          <el-input v-model="form.classSection" placeholder="例如：01班 或 A班" />
+        </el-form-item>
         <el-form-item label="学期" prop="semester">
           <el-input v-model="form.semester" placeholder="请输入学期（如2025秋）" />
         </el-form-item>
@@ -191,6 +245,19 @@ export default {
       const days = ["", "周一", "周二", "周三", "周四", "周五", "周六", "周日"];
       return `${days[row.dayOfWeek]} 第${row.lessonStart}-${row.lessonEnd}节`;
     },
+    /** 可视化课表逻辑：获取某个单元格（星期几，第几节）的课程数据 */
+    getCellData(day, lesson) {
+      if (!this.classList || this.classList.length === 0) return [];
+
+      // 过滤出符合当前格子的课：
+      // 1. 星期对得上 (dayOfWeek)
+      // 2. 当前节次在开始和结束节次之间 (lessonStart <= lesson <= lessonEnd)
+      return this.classList.filter(item =>
+        item.dayOfWeek === day &&
+        lesson >= item.lessonStart &&
+        lesson <= item.lessonEnd
+      );
+    },
     async handleAdd() {
       this.reset();
       await this.getCourseLibrary(); // 弹窗前先抓取正式课程表
@@ -220,7 +287,7 @@ export default {
     },
     cancel() { this.open = false; this.reset(); },
     reset() {
-      this.form = { classId: null, semester: '2025秋', courseId: null, capacity: 60, dayOfWeek: null, lessonStart: 1, lessonEnd: 2 };
+      this.form = { classId: null, semester: '2025秋', courseId: null, capacity: 60, dayOfWeek: null, lessonStart: 1, lessonEnd: 2,classSection:null };
       this.resetForm("form");
     },
     handleRandomKick() {
@@ -234,7 +301,24 @@ export default {
     },
     handleQuery() { this.queryParams.pageNum = 1; this.getList(); },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery(); },
-    handleSelectionChange(selection) { this.ids = selection.map(i => i.classId); this.single = selection.length!==1; this.multiple = !selection.length; }
+    handleSelectionChange(selection) { this.ids = selection.map(i => i.classId); this.single = selection.length!==1; this.multiple = !selection.length; },
+    /** 追加时段按钮逻辑 */
+    handleAppendTime(row) {
+      this.reset();
+      // 提取原本的课程信息，放置在新表单里，但时间留空
+      this.form = {
+        semester: row.semester,
+        courseId: row.courseId,
+        staffId: row.staffId,
+        capacity: row.capacity,
+        dayOfWeek: null, // 让教务填新的时间
+        lessonStart: 1,
+        lessonEnd: 2,
+        classroomId: null
+      };
+      this.open = true;
+      this.title = "为此课程追加上课时段";
+    }
   }
 }
 </script>
