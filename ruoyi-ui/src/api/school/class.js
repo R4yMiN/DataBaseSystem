@@ -43,10 +43,10 @@ export function delClass(classId) {
   })
 }
 
-//随机抽签剔除超员学生
+//踢人过程
 export function executeRandomKick() {
   return request({
-    url:'/school/class/randomKick',
-    method:'post'
+    url: '/school/class/randomKick',
+    method: 'post'
   })
 }

@@ -15,7 +15,7 @@ public interface StuClassMapper
     public int updateStuClass(StuClass stuClass);
     public int deleteStuClassByClassId(Long classId);
     public int deleteStuClassByClassIds(Long[] classIds);
-    public int executeRandomKick();
+    public void executeRandomKick();
 
     /**
      * 检查排课冲突数量
