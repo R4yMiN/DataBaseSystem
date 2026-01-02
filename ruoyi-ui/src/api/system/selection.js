@@ -35,6 +35,22 @@ export function updateSelection(data) {
   })
 }
 
+// 选课
+export function selectSelection(id) {
+  return request({
+    url: '/system/selection/select/' + id,
+    method: 'put'
+  })
+}
+
+// 退选
+export function unselectSelection(id) {
+  return request({
+    url: '/system/selection/unselect/' + id,
+    method: 'put'
+  })
+}
+
 // 删除学生自主选课
 export function delSelection(id) {
   return request({
@@ -43,18 +59,10 @@ export function delSelection(id) {
   })
 }
 
-// 选择课程（学生操作）
-export function selectSelection(id) {
+// 获取当前学生的已选课程列表（课表）
+export function getMySchedule() {
   return request({
-    url: '/system/selection/select/' + id,
-    method: 'post'
-  })
-}
-
-// 退选课程（学生操作）
-export function unselectSelection(id) {
-  return request({
-    url: '/system/selection/unselect/' + id,
-    method: 'post'
+    url: '/system/selection/mySchedule',
+    method: 'get'
   })
 }

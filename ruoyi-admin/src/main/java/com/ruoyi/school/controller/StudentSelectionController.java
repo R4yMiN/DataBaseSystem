@@ -20,12 +20,13 @@ import com.ruoyi.school.domain.StudentSelection;
 import com.ruoyi.school.service.IStudentSelectionService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.utils.SecurityUtils;
 
 /**
  * 学生自主选课Controller
  * 
  * @author admin
- * @date 2026-01-02
+ * @date 2026-01-03
  */
 @RestController
 @RequestMapping("/system/selection")
@@ -92,6 +93,47 @@ public class StudentSelectionController extends BaseController
     }
 
     /**
+     * 选课（含时间冲突检测）
+     */
+    @PreAuthorize("@ss.hasPermi('system:selection:list')")
+    @Log(title = "学生自主选课", businessType = BusinessType.UPDATE)
+    @PutMapping("/select/{id}")
+    public AjaxResult selectCourse(@PathVariable Long id)
+    {
+        String studentId = SecurityUtils.getUsername();
+        String studentName = SecurityUtils.getLoginUser().getUser().getNickName();
+        
+        // 获取要选的课程信息
+        StudentSelection target = studentSelectionService.selectStudentSelectionById(id);
+        if (target == null) {
+            return error("课程不存在");
+        }
+        
+        // 检查时间冲突
+        int conflict = studentSelectionService.checkTimeConflict(studentId, target.getSemester(), target.getClassTime(), id);
+        if (conflict > 0) {
+            return error("选课失败：该时间段已有其他课程，存在时间冲突");
+        }
+        
+        int rows = studentSelectionService.selectCourse(id, studentId, studentName);
+        if (rows > 0) {
+            return success("选课成功");
+        }
+        return error("选课失败：课程容量已满或已被选择");
+    }
+
+    /**
+     * 退选
+     */
+    @PreAuthorize("@ss.hasPermi('system:selection:list')")
+    @Log(title = "学生自主选课", businessType = BusinessType.UPDATE)
+    @PutMapping("/unselect/{id}")
+    public AjaxResult unselectCourse(@PathVariable Long id)
+    {
+        return toAjax(studentSelectionService.unselectCourse(id));
+    }
+
+    /**
      * 删除学生自主选课
      */
     @PreAuthorize("@ss.hasPermi('system:selection:remove')")
@@ -103,22 +145,13 @@ public class StudentSelectionController extends BaseController
     }
 
     /**
-     * 学生选择课程
+     * 获取当前学生的已选课程列表（课表）
      */
     @PreAuthorize("@ss.hasPermi('system:selection:list')")
-    @PostMapping("/select/{id}")
-    public AjaxResult select(@PathVariable("id") Long id)
+    @GetMapping("/mySchedule")
+    public AjaxResult mySchedule()
     {
-        return toAjax(studentSelectionService.selectCourse(id));
-    }
-
-    /**
-     * 学生退选课程
-     */
-    @PreAuthorize("@ss.hasPermi('system:selection:list')")
-    @PostMapping("/unselect/{id}")
-    public AjaxResult unselect(@PathVariable("id") Long id)
-    {
-        return toAjax(studentSelectionService.unselectCourse(id));
+        String studentId = SecurityUtils.getUsername();
+        return success(studentSelectionService.selectMySchedule(studentId));
     }
 }

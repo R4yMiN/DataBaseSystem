@@ -6,16 +6,16 @@ import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * 学生自主选课对象 student_selection
+ * VIEW对象 vw_student_schedule
  * 
- * @author admin
+ * @author ruoyi
  * @date 2026-01-03
  */
-public class StudentSelection extends BaseEntity
+public class VwStudentSchedule extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
-    /**  */
+    /** $column.columnComment */
     private Long id;
 
     /** 学生学号 */
@@ -53,18 +53,6 @@ public class StudentSelection extends BaseEntity
     /** 上课地点 */
     @Excel(name = "上课地点")
     private String classPlace;
-
-    /** 课程总容量 */
-    @Excel(name = "课程总容量")
-    private Long capacity;
-
-    /** 已选人数 */
-    @Excel(name = "已选人数")
-    private Long selectedNum;
-
-    /** 剩余容量 */
-    @Excel(name = "剩余容量")
-    private Long remainCapacity;
 
     /** 选课状态（1-已选 0-已退课） */
     @Excel(name = "选课状态", readConverterExp = "1=-已选,0=-已退课")
@@ -174,36 +162,6 @@ public class StudentSelection extends BaseEntity
         return classPlace;
     }
 
-    public void setCapacity(Long capacity) 
-    {
-        this.capacity = capacity;
-    }
-
-    public Long getCapacity() 
-    {
-        return capacity;
-    }
-
-    public void setSelectedNum(Long selectedNum) 
-    {
-        this.selectedNum = selectedNum;
-    }
-
-    public Long getSelectedNum() 
-    {
-        return selectedNum;
-    }
-
-    public void setRemainCapacity(Long remainCapacity) 
-    {
-        this.remainCapacity = remainCapacity;
-    }
-
-    public Long getRemainCapacity() 
-    {
-        return remainCapacity;
-    }
-
     public void setStatus(Long status) 
     {
         this.status = status;
@@ -237,16 +195,10 @@ public class StudentSelection extends BaseEntity
             .append("semester", getSemester())
             .append("classTime", getClassTime())
             .append("classPlace", getClassPlace())
-            .append("capacity", getCapacity())
-            .append("selectedNum", getSelectedNum())
-            .append("remainCapacity", getRemainCapacity())
             .append("status", getStatus())
             .append("isSelected", getIsSelected())
-            .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
-            .append("updateBy", getUpdateBy())
             .append("updateTime", getUpdateTime())
-            .append("remark", getRemark())
             .toString();
     }
 }

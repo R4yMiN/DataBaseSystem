@@ -37,7 +37,44 @@ public class StuClassController extends BaseController
 
         startPage();
         List<StuClass> list = stuClassService.selectStuClassList(stuClass);
-        return getDataTable(list);
+
+        // 统一去重：同一课程/班级/学期/时间段/教室的重复记录合并，避免管理员和老师端看到重复
+        String[] days = {"", "周一", "周二", "周三", "周四", "周五", "周六", "周日"};
+        Map<String, List<StuClass>> grouped = list.stream()
+                .collect(Collectors.groupingBy(c -> String.join("-",
+                        safe(c.getCourseId()),
+                        safe(c.getClassSection()),
+                        safe(c.getSemester()),
+                        String.valueOf(c.getDayOfWeek()),
+                        String.valueOf(c.getLessonStart()),
+                        String.valueOf(c.getLessonEnd()),
+                        safe(c.getClassroomId())
+                )));
+
+        List<StuClass> merged = new ArrayList<>();
+        grouped.forEach((k, subList) -> {
+            StuClass main = subList.get(0);
+            String fullTimeDesc = subList.stream()
+                    .map(t -> {
+                        if (t.getDayOfWeek() == null || t.getLessonStart() == null || t.getLessonEnd() == null) {
+                            return "待排课";
+                        }
+                        String day = t.getDayOfWeek() >= 1 && t.getDayOfWeek() <= 7 ? days[t.getDayOfWeek()] : "";
+                        String room = t.getClassroomId() == null ? "" : (" [" + t.getClassroomId() + "]");
+                        return String.format("%s第%d-%d节%s", t.getDayOfWeek() == null ? "" : day, t.getLessonStart(), t.getLessonEnd(), room);
+                    })
+                    .distinct()
+                    .collect(Collectors.joining(" | "));
+            main.setClassTime(fullTimeDesc);
+            merged.add(main);
+        });
+
+        return getDataTable(merged);
+    }
+
+    /** 安全空值处理 */
+    private String safe(String val) {
+        return val == null ? "" : val;
     }
 
     /**
