@@ -93,6 +93,18 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <el-card class="mb16" shadow="never">
+      <div slot="header">我的简易课表（已选课程）</div>
+      <el-table v-loading="loadingSchedule" :data="simpleSchedule" size="small">
+        <el-table-column label="课程ID" prop="courseId" align="center" width="120" />
+        <el-table-column label="课程名称" prop="courseName" align="center" />
+        <el-table-column label="教师" prop="teacherName" align="center" width="140" />
+        <el-table-column label="学期" prop="semester" align="center" width="140" />
+        <el-table-column label="上课时间" prop="classTime" align="center" />
+        <el-table-column label="上课地点" prop="classPlace" align="center" width="160" />
+      </el-table>
+    </el-card>
+
     <el-table v-loading="loading" :data="selectionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="选课记录ID" align="center" prop="selectionId" />
@@ -175,6 +187,9 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
+      // 我的简易课表数据
+      simpleSchedule: [],
+      loadingSchedule: false,
       // 选课成绩表格数据
       selectionList: [],
       // 弹出层标题
@@ -206,6 +221,7 @@ export default {
   },
   created() {
     this.getList()
+    this.loadSimpleSchedule()
   },
   methods: {
     /** 查询选课成绩列表 */
@@ -217,6 +233,20 @@ export default {
         this.loading = false
       })
     },
+      /** 加载当前学生的简易课表（仅展示已选课程） */
+      loadSimpleSchedule() {
+        const studentId = this.$store?.state?.user?.userName
+        if (!studentId) {
+          this.simpleSchedule = []
+          return
+        }
+        this.loadingSchedule = true
+        listSelection({ pageNum: 1, pageSize: 100, studentId, status: 1 }).then(res => {
+          this.simpleSchedule = Array.isArray(res.rows) ? res.rows : []
+        }).finally(() => {
+          this.loadingSchedule = false
+        })
+      },
     // 取消按钮
     cancel() {
       this.open = false
@@ -275,12 +305,14 @@ export default {
               this.$modal.msgSuccess("修改成功")
               this.open = false
               this.getList()
+              this.loadSimpleSchedule()
             })
           } else {
             addSelection(this.form).then(response => {
               this.$modal.msgSuccess("新增成功")
               this.open = false
               this.getList()
+              this.loadSimpleSchedule()
             })
           }
         }
@@ -293,6 +325,7 @@ export default {
         return delSelection(selectionIds)
       }).then(() => {
         this.getList()
+        this.loadSimpleSchedule()
         this.$modal.msgSuccess("删除成功")
       }).catch(() => {})
     },

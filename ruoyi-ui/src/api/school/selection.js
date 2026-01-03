@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询选课成绩列表
 export function listSelection(query) {
   return request({
-    url: '/school/selection/list',
+    url: '/system/selection/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listSelection(query) {
 // 查询选课成绩详细
 export function getSelection(selectionId) {
   return request({
-    url: '/school/selection/' + selectionId,
+    url: '/system/selection/' + selectionId,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getSelection(selectionId) {
 // 新增选课成绩
 export function addSelection(data) {
   return request({
-    url: '/school/selection',
+    url: '/system/selection',
     method: 'post',
     data: data
   })
@@ -29,7 +29,7 @@ export function addSelection(data) {
 // 修改选课成绩
 export function updateSelection(data) {
   return request({
-    url: '/school/selection',
+    url: '/system/selection',
     method: 'put',
     data: data
   })
@@ -38,7 +38,7 @@ export function updateSelection(data) {
 // 删除选课成绩
 export function delSelection(selectionId) {
   return request({
-    url: '/school/selection/' + selectionId,
+    url: '/system/selection/' + selectionId,
     method: 'delete'
   })
 }

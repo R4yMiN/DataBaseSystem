@@ -7,7 +7,7 @@ import com.ruoyi.school.domain.StudentSelection;
  * 学生自主选课Service接口
  * 
  * @author admin
- * @date 2026-01-02
+ * @date 2026-01-03
  */
 public interface IStudentSelectionService 
 {
@@ -44,6 +44,22 @@ public interface IStudentSelectionService
     public int updateStudentSelection(StudentSelection studentSelection);
 
     /**
+     * 选课
+     *
+     * @param id 学生自主选课主键
+     * @return 结果
+     */
+    public int selectCourse(Long id, String studentId, String studentName);
+
+    /**
+     * 退选
+     *
+     * @param id 学生自主选课主键
+     * @return 结果
+     */
+    public int unselectCourse(Long id);
+
+    /**
      * 批量删除学生自主选课
      * 
      * @param ids 需要删除的学生自主选课主键集合
@@ -60,18 +76,21 @@ public interface IStudentSelectionService
     public int deleteStudentSelectionById(Long id);
 
     /**
-     * 学生选择课程（将 is_selected 置为 1，并更新人数/容量）
+     * 检查时间冲突
      *
-     * @param id 学生自主选课主键
-     * @return 结果
+     * @param studentId 学生ID
+     * @param semester 学期
+     * @param classTime 上课时间
+     * @param id 当前选课ID
+     * @return 冲突数量
      */
-    public int selectCourse(Long id);
+    public int checkTimeConflict(String studentId, String semester, String classTime, Long id);
 
     /**
-     * 学生退选课程（将 is_selected 置为 0，并更新人数/容量）
+     * 查询学生已选课程列表
      *
-     * @param id 学生自主选课主键
-     * @return 结果
+     * @param studentId 学生ID
+     * @return 已选课程列表
      */
-    public int unselectCourse(Long id);
+    public List<StudentSelection> selectMySchedule(String studentId);
 }

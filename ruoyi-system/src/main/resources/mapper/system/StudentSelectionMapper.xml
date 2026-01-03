@@ -123,15 +123,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
-    <update id="selectCourse" parameterType="Long">
+    <update id="selectCourse">
         update student_selection
         set is_selected = 1,
             status = 1,
+            student_id = #{studentId},
+            student_name = #{studentName},
             selected_num = ifnull(selected_num, 0) + 1,
             remain_capacity = ifnull(remain_capacity, 0) - 1,
             update_time = now()
         where id = #{id}
-                    and (is_selected is null or is_selected != 1)
+          and (is_selected is null or is_selected != 1)
           and ifnull(remain_capacity, 0) &gt; 0
     </update>
 
@@ -139,10 +141,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         update student_selection
         set is_selected = 0,
             status = 0,
+            student_id = null,
+            student_name = null,
             selected_num = case when ifnull(selected_num, 0) &gt; 0 then ifnull(selected_num, 0) - 1 else 0 end,
             remain_capacity = ifnull(remain_capacity, 0) + 1,
             update_time = now()
         where id = #{id}
           and ifnull(is_selected, 0) = 1
     </update>
+
+    <!-- 检查时间冲突：查询该学生已选课程中是否存在相同时间段的课程 -->
+    <select id="checkTimeConflict" resultType="int">
+        select count(1) from student_selection
+        where student_id = #{studentId}
+          and is_selected = 1
+          and semester = #{semester}
+          and class_time = #{classTime}
+          and id != #{id}
+    </select>
+
+    <!-- 查询学生已选课程列表 -->
+    <select id="selectMySchedule" resultMap="StudentSelectionResult">
+        <include refid="selectStudentSelectionVo"/>
+        where student_id = #{studentId} and is_selected = 1
+        order by class_time
+    </select>
 </mapper>

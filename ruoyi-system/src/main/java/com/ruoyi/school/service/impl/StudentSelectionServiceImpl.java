@@ -12,7 +12,7 @@ import com.ruoyi.school.service.IStudentSelectionService;
  * 学生自主选课Service业务层处理
  * 
  * @author admin
- * @date 2026-01-02
+ * @date 2026-01-03
  */
 @Service
 public class StudentSelectionServiceImpl implements IStudentSelectionService 
@@ -71,6 +71,30 @@ public class StudentSelectionServiceImpl implements IStudentSelectionService
     }
 
     /**
+     * 选课
+     *
+     * @param id 学生自主选课主键
+     * @return 结果
+     */
+    @Override
+    public int selectCourse(Long id, String studentId, String studentName)
+    {
+        return studentSelectionMapper.selectCourse(id, studentId, studentName);
+    }
+
+    /**
+     * 退选
+     *
+     * @param id 学生自主选课主键
+     * @return 结果
+     */
+    @Override
+    public int unselectCourse(Long id)
+    {
+        return studentSelectionMapper.unselectCourse(id);
+    }
+
+    /**
      * 批量删除学生自主选课
      * 
      * @param ids 需要删除的学生自主选课主键
@@ -95,20 +119,29 @@ public class StudentSelectionServiceImpl implements IStudentSelectionService
     }
 
     /**
-     * 学生选择课程
+     * 检查时间冲突
+     *
+     * @param studentId 学生ID
+     * @param semester 学期
+     * @param classTime 上课时间
+     * @param id 当前选课ID
+     * @return 冲突数量
      */
     @Override
-    public int selectCourse(Long id)
+    public int checkTimeConflict(String studentId, String semester, String classTime, Long id)
     {
-        return studentSelectionMapper.selectCourse(id);
+        return studentSelectionMapper.checkTimeConflict(studentId, semester, classTime, id);
     }
 
     /**
-     * 学生退选课程
+     * 查询学生已选课程列表
+     *
+     * @param studentId 学生ID
+     * @return 已选课程列表
      */
     @Override
-    public int unselectCourse(Long id)
+    public List<StudentSelection> selectMySchedule(String studentId)
     {
-        return studentSelectionMapper.unselectCourse(id);
+        return studentSelectionMapper.selectMySchedule(studentId);
     }
 }

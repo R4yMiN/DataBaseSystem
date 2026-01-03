@@ -174,7 +174,7 @@
       <el-table-column label="剩余容量" align="center" prop="remainCapacity" />
       <el-table-column label="选课状态" align="center" prop="status" />
       <el-table-column label="是否被当前学生选中" align="center" prop="isSelected" />
-      <el-table-column label="${comment}" align="center" prop="remark" />
+      <el-table-column label="" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -245,7 +245,7 @@
         <el-form-item label="是否被当前学生选中" prop="isSelected">
           <el-input v-model="form.isSelected" placeholder="请输入是否被当前学生选中" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="remark">
+        <el-form-item label="" prop="remark">
           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
         </el-form-item>
       </el-form>
