@@ -32,38 +32,30 @@ public class StuSelectionServiceImpl implements IStuSelectionService
 
     @Override
     @Transactional
-    public int insertStuSelection(StuSelection stuSelection)
-    {
-        StuClass targetClass = stuClassMapper.selectStuClassByClassId(stuSelection.getClassId());
+    public int insertStuSelection(StuSelection stuSelection) {
+        // 1. 获取选中的那行课（父亲）
+        StuClass parent = stuClassMapper.selectStuClassByClassId(stuSelection.getClassId());
 
-        if (targetClass.getSelectedNum() >= targetClass.getCapacity()) {
-            throw new ServiceException("选课失败：人数已满");
+        // 2. 查出这门课的所有关联项（包括父亲自己和所有儿子）
+        StuClass query = new StuClass();
+        query.setCourseId(parent.getCourseId());
+        query.setStaffId(parent.getStaffId());
+        query.setClassSection(parent.getClassSection());
+        query.setSemester(parent.getSemester());
+        List<StuClass> allParts = stuClassMapper.selectStuClassList(query);
+
+        // 3. 循环插入选课表
+        int count = 0;
+        for (StuClass part : allParts) {
+            StuSelection s = new StuSelection();
+            s.setStudentId(stuSelection.getStudentId());
+            s.setClassId(part.getClassId());
+            // 这里的 checkAlreadySelected 记得按之前教你的方式传参
+            if (stuSelectionMapper.checkAlreadySelected(s.getStudentId(), s.getClassId()) == 0) {
+                count += stuSelectionMapper.insertStuSelection(s);
+            }
         }
-
-        if (stuSelectionMapper.checkAlreadySelected(stuSelection.getStudentId(), stuSelection.getClassId()) > 0) {
-            throw new ServiceException("重复选课！");
-        }
-
-        int conflict = stuSelectionMapper.checkStudentTimeConflict(
-                stuSelection.getStudentId(),
-                targetClass.getDayOfWeek(),
-                targetClass.getLessonStart(),
-                targetClass.getLessonEnd(),
-                targetClass.getWeekStart(),
-                targetClass.getWeekEnd(),
-                targetClass.getWeekType()
-        );
-        if (conflict > 0) {
-            throw new ServiceException("时间冲突！");
-        }
-
-        int rows = stuSelectionMapper.insertStuSelection(stuSelection);
-
-        // 重点：调用上面接口里定义的 plusSelectedNum
-        if (rows > 0) {
-            stuClassMapper.plusSelectedNum(stuSelection.getClassId());
-        }
-        return rows;
+        return count;
     }
 
     @Override

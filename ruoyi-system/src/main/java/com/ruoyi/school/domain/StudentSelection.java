@@ -7,7 +7,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 学生自主选课对象 student_selection
- * 
+ *
  * @author admin
  * @date 2026-01-03
  */
@@ -74,152 +74,152 @@ public class StudentSelection extends BaseEntity
     @Excel(name = "是否被当前学生选中", readConverterExp = "0=-未选,1=-已选")
     private Long isSelected;
 
-    public void setId(Long id) 
+    public void setId(Long id)
     {
         this.id = id;
     }
 
-    public Long getId() 
+    public Long getId()
     {
         return id;
     }
 
-    public void setStudentId(String studentId) 
+    public void setStudentId(String studentId)
     {
         this.studentId = studentId;
     }
 
-    public String getStudentId() 
+    public String getStudentId()
     {
         return studentId;
     }
 
-    public void setStudentName(String studentName) 
+    public void setStudentName(String studentName)
     {
         this.studentName = studentName;
     }
 
-    public String getStudentName() 
+    public String getStudentName()
     {
         return studentName;
     }
 
-    public void setCourseId(String courseId) 
+    public void setCourseId(String courseId)
     {
         this.courseId = courseId;
     }
 
-    public String getCourseId() 
+    public String getCourseId()
     {
         return courseId;
     }
 
-    public void setCourseName(String courseName) 
+    public void setCourseName(String courseName)
     {
         this.courseName = courseName;
     }
 
-    public String getCourseName() 
+    public String getCourseName()
     {
         return courseName;
     }
 
-    public void setTeacherId(String teacherId) 
+    public void setTeacherId(String teacherId)
     {
         this.teacherId = teacherId;
     }
 
-    public String getTeacherId() 
+    public String getTeacherId()
     {
         return teacherId;
     }
 
-    public void setTeacherName(String teacherName) 
+    public void setTeacherName(String teacherName)
     {
         this.teacherName = teacherName;
     }
 
-    public String getTeacherName() 
+    public String getTeacherName()
     {
         return teacherName;
     }
 
-    public void setSemester(String semester) 
+    public void setSemester(String semester)
     {
         this.semester = semester;
     }
 
-    public String getSemester() 
+    public String getSemester()
     {
         return semester;
     }
 
-    public void setClassTime(String classTime) 
+    public void setClassTime(String classTime)
     {
         this.classTime = classTime;
     }
 
-    public String getClassTime() 
+    public String getClassTime()
     {
         return classTime;
     }
 
-    public void setClassPlace(String classPlace) 
+    public void setClassPlace(String classPlace)
     {
         this.classPlace = classPlace;
     }
 
-    public String getClassPlace() 
+    public String getClassPlace()
     {
         return classPlace;
     }
 
-    public void setCapacity(Long capacity) 
+    public void setCapacity(Long capacity)
     {
         this.capacity = capacity;
     }
 
-    public Long getCapacity() 
+    public Long getCapacity()
     {
         return capacity;
     }
 
-    public void setSelectedNum(Long selectedNum) 
+    public void setSelectedNum(Long selectedNum)
     {
         this.selectedNum = selectedNum;
     }
 
-    public Long getSelectedNum() 
+    public Long getSelectedNum()
     {
         return selectedNum;
     }
 
-    public void setRemainCapacity(Long remainCapacity) 
+    public void setRemainCapacity(Long remainCapacity)
     {
         this.remainCapacity = remainCapacity;
     }
 
-    public Long getRemainCapacity() 
+    public Long getRemainCapacity()
     {
         return remainCapacity;
     }
 
-    public void setStatus(Long status) 
+    public void setStatus(Long status)
     {
         this.status = status;
     }
 
-    public Long getStatus() 
+    public Long getStatus()
     {
         return status;
     }
 
-    public void setIsSelected(Long isSelected) 
+    public void setIsSelected(Long isSelected)
     {
         this.isSelected = isSelected;
     }
 
-    public Long getIsSelected() 
+    public Long getIsSelected()
     {
         return isSelected;
     }
@@ -227,26 +227,26 @@ public class StudentSelection extends BaseEntity
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-            .append("id", getId())
-            .append("studentId", getStudentId())
-            .append("studentName", getStudentName())
-            .append("courseId", getCourseId())
-            .append("courseName", getCourseName())
-            .append("teacherId", getTeacherId())
-            .append("teacherName", getTeacherName())
-            .append("semester", getSemester())
-            .append("classTime", getClassTime())
-            .append("classPlace", getClassPlace())
-            .append("capacity", getCapacity())
-            .append("selectedNum", getSelectedNum())
-            .append("remainCapacity", getRemainCapacity())
-            .append("status", getStatus())
-            .append("isSelected", getIsSelected())
-            .append("createBy", getCreateBy())
-            .append("createTime", getCreateTime())
-            .append("updateBy", getUpdateBy())
-            .append("updateTime", getUpdateTime())
-            .append("remark", getRemark())
-            .toString();
+                .append("id", getId())
+                .append("studentId", getStudentId())
+                .append("studentName", getStudentName())
+                .append("courseId", getCourseId())
+                .append("courseName", getCourseName())
+                .append("teacherId", getTeacherId())
+                .append("teacherName", getTeacherName())
+                .append("semester", getSemester())
+                .append("classTime", getClassTime())
+                .append("classPlace", getClassPlace())
+                .append("capacity", getCapacity())
+                .append("selectedNum", getSelectedNum())
+                .append("remainCapacity", getRemainCapacity())
+                .append("status", getStatus())
+                .append("isSelected", getIsSelected())
+                .append("createBy", getCreateBy())
+                .append("createTime", getCreateTime())
+                .append("updateBy", getUpdateBy())
+                .append("updateTime", getUpdateTime())
+                .append("remark", getRemark())
+                .toString();
     }
 }

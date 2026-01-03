@@ -1,45 +1,37 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="学号" prop="studentId">
-        <el-input
-          v-model="queryParams.studentId"
-          placeholder="请输入学号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+    <!-- 1. 顶部卡片：我的已选课程（课表视角） -->
+    <el-card class="mb16" shadow="never" style="margin-bottom: 20px;">
+      <div slot="header" style="font-weight: bold;">
+        <i class="el-icon-date"></i> 我的已选课程
+      </div>
+      <el-table v-loading="loadingSchedule" :data="mySchedule" size="small" border>
+        <el-table-column label="课程名称" align="center" prop="courseName" />
+        <el-table-column label="教师" align="center" prop="teacherName" />
+        <el-table-column label="班级/课序" align="center" prop="classSection" width="100" />
+        <el-table-column label="上课时间" align="center" min-width="180">
+          <template slot-scope="scope">
+            <div v-for="time in (scope.row.classTime || '').split('|')" :key="time">
+              <el-tag size="mini" style="margin-bottom: 2px;">{{ time }}</el-tag>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="地点" align="center" prop="classroomId" width="120" />
+        <el-table-column label="操作" align="center" width="100">
+          <template slot-scope="scope">
+            <el-button type="text" style="color: #f56c6c" icon="el-icon-circle-close" @click="handleUnselect(scope.row)">退选</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <!-- 2. 查询表单 -->
+    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="80px">
+      <el-form-item label="课程名称" prop="courseName">
+        <el-input v-model="queryParams.courseName" placeholder="请输入课程名称" clearable @keyup.enter.native="handleQuery" />
       </el-form-item>
-      <el-form-item label="开课ID" prop="classId">
-        <el-input
-          v-model="queryParams.classId"
-          placeholder="请输入开课ID"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="平时成绩" prop="normalScore">
-        <el-input
-          v-model="queryParams.normalScore"
-          placeholder="请输入平时成绩"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="考试成绩" prop="testScore">
-        <el-input
-          v-model="queryParams.testScore"
-          placeholder="请输入考试成绩"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="总评成绩" prop="totalScore">
-        <el-input
-          v-model="queryParams.totalScore"
-          placeholder="请输入总评成绩"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+      <el-form-item label="教师姓名" prop="teacherName">
+        <el-input v-model="queryParams.teacherName" placeholder="请输入教师姓名" clearable @keyup.enter.native="handleQuery" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -47,92 +39,52 @@
       </el-form-item>
     </el-form>
 
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-          type="primary"
-          plain
-          icon="el-icon-plus"
-          size="mini"
-          @click="handleAdd"
-          v-hasPermi="['school:selection:add']"
-        >新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['school:selection:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="el-icon-delete"
-          size="mini"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['school:selection:remove']"
-        >删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="warning"
-          plain
-          icon="el-icon-download"
-          size="mini"
-          @click="handleExport"
-          v-hasPermi="['school:selection:export']"
-        >导出</el-button>
-      </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
-    </el-row>
-
-    <el-card class="mb16" shadow="never">
-      <div slot="header">我的简易课表（已选课程）</div>
-      <el-table v-loading="loadingSchedule" :data="simpleSchedule" size="small">
-        <el-table-column label="课程ID" prop="courseId" align="center" width="120" />
-        <el-table-column label="课程名称" prop="courseName" align="center" />
-        <el-table-column label="教师" prop="teacherName" align="center" width="140" />
-        <el-table-column label="学期" prop="semester" align="center" width="140" />
-        <el-table-column label="上课时间" prop="classTime" align="center" />
-        <el-table-column label="上课地点" prop="classPlace" align="center" width="160" />
-      </el-table>
-    </el-card>
-
-    <el-table v-loading="loading" :data="selectionList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="选课记录ID" align="center" prop="selectionId" />
-      <el-table-column label="学号" align="center" prop="studentId" />
-      <el-table-column label="开课ID" align="center" prop="classId" />
-      <el-table-column label="平时成绩" align="center" prop="normalScore" />
-      <el-table-column label="考试成绩" align="center" prop="testScore" />
-      <el-table-column label="总评成绩" align="center" prop="totalScore" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+    <!-- 3. 数据表格：选课大厅 -->
+    <el-table v-loading="loading" :data="selectionList" border>
+      <el-table-column label="课程名称" align="center" prop="courseName" />
+      <el-table-column label="教师姓名" align="center" prop="teacherName" width="100" />
+      <el-table-column label="班级/课序" align="center" prop="classSection" width="100" />
+      <el-table-column label="学期" align="center" prop="semester" width="100" />
+      <el-table-column label="上课时间" align="center" min-width="200">
         <template slot-scope="scope">
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['school:selection:edit']"
-          >修改</el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['school:selection:remove']"
-          >删除</el-button>
+          <div v-for="time in (scope.row.classTime || '').split('|')" :key="time">
+            <el-tag size="mini" type="info" style="margin-bottom: 2px;">{{ time }}</el-tag>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="已选/容量" align="center" width="100">
+        <template slot-scope="scope">
+          {{ scope.row.selectedNum }} / {{ scope.row.capacity }}
+        </template>
+      </el-table-column>
+
+      <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
+        <template slot-scope="scope">
+          <!-- 学生视角 -->
+          <div v-if="!isAdmin">
+            <el-button
+              v-if="scope.row.isSelected === 1"
+              size="mini"
+              type="danger"
+              @click="handleUnselect(scope.row)"
+            >退选</el-button>
+            <el-button
+              v-else
+              size="mini"
+              type="primary"
+              :disabled="scope.row.selectedNum >= scope.row.capacity"
+              @click="handleSelect(scope.row)"
+            >选择</el-button>
+          </div>
+          <!-- 管理员视角 -->
+          <div v-else>
+            <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)">管理</el-button>
+            <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -141,23 +93,15 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改选课成绩对话框 -->
+    <!-- 管理对话框（评分或调整） -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="学号" prop="studentId">
-          <el-input v-model="form.studentId" placeholder="请输入学号" />
+      <el-form ref="form" :model="form" label-width="100px">
+        <el-form-item label="课程名称">{{form.courseName}}</el-form-item>
+        <el-form-item label="平时成绩">
+          <el-input-number v-model="form.normalScore" :min="0" :max="100" />
         </el-form-item>
-        <el-form-item label="开课ID" prop="classId">
-          <el-input v-model="form.classId" placeholder="请输入开课ID" />
-        </el-form-item>
-        <el-form-item label="平时成绩" prop="normalScore">
-          <el-input v-model="form.normalScore" placeholder="请输入平时成绩" />
-        </el-form-item>
-        <el-form-item label="考试成绩" prop="testScore">
-          <el-input v-model="form.testScore" placeholder="请输入考试成绩" />
-        </el-form-item>
-        <el-form-item label="总评成绩" prop="totalScore">
-          <el-input v-model="form.totalScore" placeholder="请输入总评成绩" />
+        <el-form-item label="考试成绩">
+          <el-input-number v-model="form.testScore" :min="0" :max="100" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -169,172 +113,114 @@
 </template>
 
 <script>
-import { listSelection, getSelection, delSelection, addSelection, updateSelection } from "@/api/school/selection"
+// 注意：API 路径必须对应我们之前修改的 /school/selection
+import { listSelection, getSelection, delSelection, addSelection, updateSelection, getMySchedule } from "@/api/system/selection"
 
 export default {
   name: "Selection",
   data() {
     return {
-      // 遮罩层
       loading: true,
-      // 选中数组
-      ids: [],
-      // 非单个禁用
-      single: true,
-      // 非多个禁用
-      multiple: true,
-      // 显示搜索条件
-      showSearch: true,
-      // 总条数
-      total: 0,
-      // 我的简易课表数据
-      simpleSchedule: [],
       loadingSchedule: false,
-      // 选课成绩表格数据
-      selectionList: [],
-      // 弹出层标题
+      showSearch: true,
+      total: 0,
+      isAdmin: this.$store.getters.roles.includes('admin') || this.$store.getters.roles.includes('dean'),
+      selectionList: [], // 下方大厅数据
+      mySchedule: [],    // 顶部已选数据
       title: "",
-      // 是否显示弹出层
       open: false,
-      // 查询参数
       queryParams: {
         pageNum: 1,
         pageSize: 10,
-        studentId: null,
-        classId: null,
-        normalScore: null,
-        testScore: null,
-        totalScore: null
+        courseName: undefined,
+        teacherName: undefined
       },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        studentId: [
-          { required: true, message: "学号不能为空", trigger: "blur" }
-        ],
-        classId: [
-          { required: true, message: "开课ID不能为空", trigger: "blur" }
-        ],
-      }
+      form: {}
     }
   },
   created() {
-    this.getList()
-    this.loadSimpleSchedule()
+    this.getList();
+    this.loadMySchedule();
   },
   methods: {
-    /** 查询选课成绩列表 */
+    /** 查询选课大厅 */
     getList() {
-      this.loading = true
-      listSelection(this.queryParams).then(response => {
-        this.selectionList = response.rows
-        this.total = response.total
-        this.loading = false
-      })
+      this.loading = true;
+      listSelection(this.queryParams).then(res => {
+        this.selectionList = res.rows;
+        this.total = res.total;
+        this.loading = false;
+      });
     },
-      /** 加载当前学生的简易课表（仅展示已选课程） */
-      loadSimpleSchedule() {
-        const studentId = this.$store?.state?.user?.userName
-        if (!studentId) {
-          this.simpleSchedule = []
-          return
-        }
-        this.loadingSchedule = true
-        listSelection({ pageNum: 1, pageSize: 100, studentId, status: 1 }).then(res => {
-          this.simpleSchedule = Array.isArray(res.rows) ? res.rows : []
-        }).finally(() => {
-          this.loadingSchedule = false
-        })
-      },
-    // 取消按钮
-    cancel() {
-      this.open = false
-      this.reset()
+    /** 加载我的课表 */
+    loadMySchedule() {
+      this.loadingSchedule = true;
+      getMySchedule().then(res => {
+        this.mySchedule = res.rows;
+        this.loadingSchedule = false;
+      }).catch(() => {
+        this.loadingSchedule = false;
+      });
     },
-    // 表单重置
-    reset() {
-      this.form = {
-        selectionId: null,
-        studentId: null,
-        classId: null,
-        normalScore: null,
-        testScore: null,
-        totalScore: null
-      }
-      this.resetForm("form")
-    },
-    /** 搜索按钮操作 */
-    handleQuery() {
-      this.queryParams.pageNum = 1
-      this.getList()
-    },
-    /** 重置按钮操作 */
-    resetQuery() {
-      this.resetForm("queryForm")
-      this.handleQuery()
-    },
-    // 多选框选中数据
-    handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.selectionId)
-      this.single = selection.length!==1
-      this.multiple = !selection.length
-    },
-    /** 新增按钮操作 */
-    handleAdd() {
-      this.reset()
-      this.open = true
-      this.title = "添加选课成绩"
-    },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset()
-      const selectionId = row.selectionId || this.ids
-      getSelection(selectionId).then(response => {
-        this.form = response.data
-        this.open = true
-        this.title = "修改选课成绩"
-      })
-    },
-    /** 提交按钮 */
-    submitForm() {
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.selectionId != null) {
-            updateSelection(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功")
-              this.open = false
-              this.getList()
-              this.loadSimpleSchedule()
-            })
-          } else {
-            addSelection(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功")
-              this.open = false
-              this.getList()
-              this.loadSimpleSchedule()
-            })
-          }
-        }
-      })
-    },
-    /** 删除按钮操作 */
-    handleDelete(row) {
-      const selectionIds = row.selectionId || this.ids
-      this.$modal.confirm('是否确认删除选课成绩编号为"' + selectionIds + '"的数据项？').then(function() {
-        return delSelection(selectionIds)
+    /** 选课操作 */
+    handleSelect(row) {
+      this.$modal.confirm(`确认要选择《${row.courseName}》吗？这将选中该班级的所有教学时段。`).then(() => {
+        // 关键：传给后端的必须是 classId (即聚合后的代表ID)
+        return addSelection({ classId: row.classId });
       }).then(() => {
-        this.getList()
-        this.loadSimpleSchedule()
-        this.$modal.msgSuccess("删除成功")
-      }).catch(() => {})
+        this.$modal.msgSuccess("选课成功");
+        this.getList();
+        this.loadMySchedule();
+      });
     },
-    /** 导出按钮操作 */
-    handleExport() {
-      this.download('school/selection/export', {
-        ...this.queryParams
-      }, `selection_${new Date().getTime()}.xlsx`)
+    /** 退选操作 */
+    handleUnselect(row) {
+      this.$modal.confirm(`确认要退选《${row.courseName}》吗？该班级所有时段将被移除。`).then(() => {
+        // 关键：退选使用的是选课记录的唯一主键 selectionId
+        return delSelection(row.selectionId);
+      }).then(() => {
+        this.$modal.msgSuccess("退选成功");
+        this.getList();
+        this.loadMySchedule();
+      });
+    },
+    /** 管理按钮 */
+    handleUpdate(row) {
+      this.form = { ...row };
+      this.open = true;
+      this.title = "管理选课/评分";
+    },
+    /** 提交管理表单 */
+    submitForm() {
+      updateSelection(this.form).then(response => {
+        this.$modal.msgSuccess("操作成功");
+        this.open = false;
+        this.getList();
+      });
+    },
+    handleQuery() {
+      this.queryParams.pageNum = 1;
+      this.getList();
+    },
+    resetQuery() {
+      this.resetForm("queryForm");
+      this.handleQuery();
+    },
+    cancel() {
+      this.open = false;
+    },
+    handleDelete(row) {
+      this.$modal.confirm('确认强制删除该选课记录？').then(() => {
+        return delSelection(row.selectionId);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      });
     }
   }
 }
 </script>
+
+<style scoped>
+.mb16 { margin-bottom: 16px; }
+</style>

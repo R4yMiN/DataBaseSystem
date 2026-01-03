@@ -10,19 +10,19 @@ import com.ruoyi.school.service.IStudentSelectionService;
 
 /**
  * 学生自主选课Service业务层处理
- * 
+ *
  * @author admin
  * @date 2026-01-03
  */
 @Service
-public class StudentSelectionServiceImpl implements IStudentSelectionService 
+public class StudentSelectionServiceImpl implements IStudentSelectionService
 {
     @Autowired
     private StudentSelectionMapper studentSelectionMapper;
 
     /**
      * 查询学生自主选课
-     * 
+     *
      * @param id 学生自主选课主键
      * @return 学生自主选课
      */
@@ -34,7 +34,7 @@ public class StudentSelectionServiceImpl implements IStudentSelectionService
 
     /**
      * 查询学生自主选课列表
-     * 
+     *
      * @param studentSelection 学生自主选课
      * @return 学生自主选课
      */
@@ -46,7 +46,7 @@ public class StudentSelectionServiceImpl implements IStudentSelectionService
 
     /**
      * 新增学生自主选课
-     * 
+     *
      * @param studentSelection 学生自主选课
      * @return 结果
      */
@@ -59,7 +59,7 @@ public class StudentSelectionServiceImpl implements IStudentSelectionService
 
     /**
      * 修改学生自主选课
-     * 
+     *
      * @param studentSelection 学生自主选课
      * @return 结果
      */
@@ -96,7 +96,7 @@ public class StudentSelectionServiceImpl implements IStudentSelectionService
 
     /**
      * 批量删除学生自主选课
-     * 
+     *
      * @param ids 需要删除的学生自主选课主键
      * @return 结果
      */
@@ -108,7 +108,7 @@ public class StudentSelectionServiceImpl implements IStudentSelectionService
 
     /**
      * 删除学生自主选课信息
-     * 
+     *
      * @param id 学生自主选课主键
      * @return 结果
      */

@@ -22,51 +22,36 @@
     </resultMap>
 
     <sql id="selectStuClassVo">
-        select c.class_id, c.semester, c.course_id, c.class_section, c.staff_id,
-               c.day_of_week, c.lesson_start, c.lesson_end, c.week_start, c.week_end,
-               c.week_type, c.classroom_id, c.capacity, c.selected_num,
-               co.course_name, u.nick_name as staff_name
+        select DISTINCT
+            c.class_id, c.semester, c.course_id, c.staff_id, c.capacity, c.selected_num,
+            c.class_section, c.day_of_week, c.lesson_start, c.lesson_end, c.week_start,
+            c.week_end, c.week_type, c.classroom_id,
+            co.course_name,
+            u.nick_name as staff_name
         from stu_class c
                  left join stu_course co on c.course_id = co.course_id
                  left join sys_user u on c.staff_id = u.user_name
     </sql>
 
-    <!-- 1. 修复 Found: 2 报错：强行 LIMIT 1 -->
-    <select id="selectStuClassByClassId" parameterType="Long" resultMap="StuClassResult">
-        <include refid="selectStuClassVo"/>
-        where c.class_id = #{classId}
-        LIMIT 1
-    </select>
-
-    <!-- 2. 修复 Invalid bound statement: 补全 update 标签 -->
-    <update id="updateStuClass" parameterType="StuClass">
-        update stu_class
-        <set>
-            <if test="semester != null">semester = #{semester},</if>
-            <if test="courseId != null">course_id = #{courseId},</if>
-            <if test="classSection != null">class_section = #{classSection},</if>
-            <if test="staffId != null">staff_id = #{staffId},</if>
-            <if test="dayOfWeek != null">day_of_week = #{dayOfWeek},</if>
-            <if test="lessonStart != null">lesson_start = #{lessonStart},</if>
-            <if test="lessonEnd != null">lesson_end = #{lessonEnd},</if>
-            <if test="weekStart != null">week_start = #{weekStart},</if>
-            <if test="weekEnd != null">week_end = #{weekEnd},</if>
-            <if test="weekType != null">week_type = #{weekType},</if>
-            <if test="classroomId != null">classroom_id = #{classroomId},</if>
-            <if test="capacity != null">capacity = #{capacity},</if>
-            <if test="selectedNum != null">selected_num = #{selectedNum},</if>
-        </set>
-        where class_id = #{classId}
-    </update>
-
-    <!-- 3. 其余必要 SQL 保持完整 -->
     <select id="selectStuClassList" parameterType="StuClass" resultMap="StuClassResult">
         <include refid="selectStuClassVo"/>
         <where>
             <if test="courseId != null  and courseId != ''"> and c.course_id = #{courseId}</if>
             <if test="staffId != null  and staffId != ''"> and c.staff_id = #{staffId}</if>
         </where>
+        /* 这里千万不要写 GROUP BY，也不要写 LIMIT 1 */
+        order by c.class_id desc
     </select>
+
+
+    <select id="selectStuClassByClassId" parameterType="Long" resultMap="StuClassResult">
+        <include refid="selectStuClassVo"/>
+        where c.class_id = #{classId}
+        <!-- 关键点：防止报错，只取一条 -->
+        LIMIT 1
+    </select>
+
+
 
     <insert id="insertStuClass" parameterType="StuClass" useGeneratedKeys="true" keyProperty="classId">
         insert into stu_class
@@ -98,6 +83,27 @@
         </trim>
     </insert>
 
+    <update id="updateStuClass" parameterType="StuClass">
+        update stu_class
+        <set>
+            <if test="semester != null">semester = #{semester},</if>
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="classSection != null">class_section = #{classSection},</if>
+            <if test="staffId != null">staff_id = #{staffId},</if>
+            <if test="dayOfWeek != null">day_of_week = #{dayOfWeek},</if>
+            <if test="lessonStart != null">lesson_start = #{lessonStart},</if>
+            <if test="lessonEnd != null">lesson_end = #{lessonEnd},</if>
+            <if test="weekStart != null">week_start = #{weekStart},</if>
+            <if test="weekEnd != null">week_end = #{weekEnd},</if>
+            <if test="weekType != null">week_type = #{weekType},</if>
+            <if test="classroomId != null">classroom_id = #{classroomId},</if>
+            <if test="capacity != null">capacity = #{capacity},</if>
+            <if test="selectedNum != null">selected_num = #{selectedNum},</if>
+        </set>
+        /* 核心：这里必须且只能是 class_id，它是这节课的唯一身份证 */
+        where class_id = #{classId}
+    </update>
+
     <delete id="deleteStuClassByClassIds" parameterType="Long">
         delete from stu_class where class_id in
         <foreach item="classId" collection="array" open="(" separator="," close=")">
@@ -110,7 +116,6 @@
         <where>
             and day_of_week = #{dayOfWeek}
             and lesson_start &lt;= #{lessonEnd} and lesson_end &gt;= #{lessonStart}
-            and week_start &lt;= #{weekEnd} and week_end &gt;= #{weekStart}
             and (classroom_id = #{classroomId} or staff_id = #{staffId})
             <if test="classId != null"> and class_id != #{classId} </if>
         </where>

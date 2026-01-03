@@ -1,104 +1,69 @@
 package com.ruoyi.school.controller;
 
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import com.ruoyi.common.annotation.Log;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.school.domain.StuSelection;
 import com.ruoyi.school.service.IStuSelectionService;
-import com.ruoyi.common.utils.poi.ExcelUtil;
-import com.ruoyi.common.core.page.TableDataInfo;
 
-/**
- * 选课成绩Controller
- * 
- * @author ruoyi
- * @date 2025-12-24
- */
 @RestController
 @RequestMapping("/school/selection")
-public class StuSelectionController extends BaseController
-{
+public class StuSelectionController extends BaseController {
+
     @Autowired
     private IStuSelectionService stuSelectionService;
 
     /**
-     * 查询选课成绩列表
+     * 选课大厅列表（解决学生看不到数据的问题）
      */
-    @PreAuthorize("@ss.hasPermi('school:selection:list')")
     @GetMapping("/list")
-    public TableDataInfo list(StuSelection stuSelection)
-    {
+    public TableDataInfo list(StuSelection stuSelection) {
+        // 获取当前登录人
+        String username = SecurityUtils.getUsername();
+        boolean isAdmin = SecurityUtils.isAdmin(SecurityUtils.getUserId());
+
+        // 无论是不是管理员，都要传入当前用户名给 XML 里的 LEFT JOIN 使用
+        // 这样学生才能在“全表”里看到哪些是自己已经选了的（蓝/红按钮切换）
+        stuSelection.setStudentId(username);
+
         startPage();
         List<StuSelection> list = stuSelectionService.selectStuSelectionList(stuSelection);
         return getDataTable(list);
     }
 
     /**
-     * 导出选课成绩列表
+     * 我的已选课程（顶部小表专用）
      */
-    @PreAuthorize("@ss.hasPermi('school:selection:export')")
-    @Log(title = "选课成绩", businessType = BusinessType.EXPORT)
-    @PostMapping("/export")
-    public void export(HttpServletResponse response, StuSelection stuSelection)
-    {
-        List<StuSelection> list = stuSelectionService.selectStuSelectionList(stuSelection);
-        ExcelUtil<StuSelection> util = new ExcelUtil<StuSelection>(StuSelection.class);
-        util.exportExcel(response, list, "选课成绩数据");
+    @GetMapping("/mySchedule")
+    public TableDataInfo mySchedule() {
+        StuSelection query = new StuSelection();
+        query.setStudentId(SecurityUtils.getUsername());
+        // 增加标记，告诉 XML 只查已选中的
+        query.getParams().put("onlyMy", "1");
+
+        List<StuSelection> list = stuSelectionService.selectStuSelectionList(query);
+        return getDataTable(list);
     }
 
     /**
-     * 获取选课成绩详细信息
+     * 选课操作 (POST)
      */
-    @PreAuthorize("@ss.hasPermi('school:selection:query')")
-    @GetMapping(value = "/{selectionId}")
-    public AjaxResult getInfo(@PathVariable("selectionId") Long selectionId)
-    {
-        return success(stuSelectionService.selectStuSelectionBySelectionId(selectionId));
-    }
-
-    /**
-     * 新增选课成绩
-     */
-    @PreAuthorize("@ss.hasPermi('school:selection:add')")
-    @Log(title = "选课成绩", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody StuSelection stuSelection)
-    {
+    public AjaxResult add(@RequestBody StuSelection stuSelection) {
+        stuSelection.setStudentId(SecurityUtils.getUsername());
         return toAjax(stuSelectionService.insertStuSelection(stuSelection));
     }
 
     /**
-     * 修改选课成绩
+     * 退选操作 (DELETE)
      */
-    @PreAuthorize("@ss.hasPermi('school:selection:edit')")
-    @Log(title = "选课成绩", businessType = BusinessType.UPDATE)
-    @PutMapping
-    public AjaxResult edit(@RequestBody StuSelection stuSelection)
-    {
-        return toAjax(stuSelectionService.updateStuSelection(stuSelection));
-    }
-
-    /**
-     * 删除选课成绩
-     */
-    @PreAuthorize("@ss.hasPermi('school:selection:remove')")
-    @Log(title = "选课成绩", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{selectionIds}")
-    public AjaxResult remove(@PathVariable Long[] selectionIds)
-    {
+    @DeleteMapping("/{selectionIds}")
+    public AjaxResult remove(@PathVariable Long[] selectionIds) {
         return toAjax(stuSelectionService.deleteStuSelectionBySelectionIds(selectionIds));
     }
 }

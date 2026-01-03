@@ -1,101 +1,64 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.school.mapper.StuSelectionMapper">
 
     <resultMap type="StuSelection" id="StuSelectionResult">
-        <result property="selectionId"    column="selection_id"    />
-        <result property="studentId"    column="student_id"    />
-        <result property="classId"    column="class_id"    />
-        <result property="normalScore"    column="normal_score"    />
-        <result property="testScore"    column="test_score"    />
-        <result property="totalScore"    column="total_score"    />
+        <result property="selectionId" column="selection_id" />
+        <result property="studentId" column="student_id" />
+        <result property="classId" column="class_id" />
+        <result property="courseName" column="course_name" />
+        <result property="teacherName" column="teacher_name" />
+        <result property="classTime" column="class_time" />
+        <result property="classroomId" column="classroom_id" />
+        <result property="capacity" column="capacity" />
+        <result property="selectedNum" column="selected_num" />
+        <result property="isSelected" column="is_selected" />
     </resultMap>
 
-    <sql id="selectStuSelectionVo">
-        select selection_id, student_id, class_id, normal_score, test_score, total_score from stu_selection
-    </sql>
-
-    <!-- 1. 校验：检查是否重复选课 -->
-    <select id="checkAlreadySelected" resultType="int">
-        select count(*) from stu_selection
-        where student_id = #{studentId} and class_id = #{classId}
-    </select>
-
-    <!-- 2. 校验：学生个人时间冲突（最关键的数字化比对逻辑） -->
-    <select id="checkStudentTimeConflict" resultType="int">
-        SELECT count(*)
-        FROM stu_selection s
-        JOIN stu_class c ON s.class_id = c.class_id
-        WHERE s.student_id = #{studentId}
-        AND c.day_of_week = #{dayOfWeek}
-        <!-- 判定节次是否有重叠 -->
-        AND c.lesson_start &lt;= #{lessonEnd}
-        AND c.lesson_end &gt;= #{lessonStart}
-        <!-- 判定周次是否有重叠 -->
-        AND c.week_start &lt;= #{weekEnd}
-        AND c.week_end &gt;= #{weekStart}
-        <!-- 判定周类型是否冲突 (单双周判定) -->
-        AND (c.week_type = 0 OR #{weekType} = 0 OR c.week_type = #{weekType})
-    </select>
-
     <select id="selectStuSelectionList" parameterType="StuSelection" resultMap="StuSelectionResult">
-        <include refid="selectStuSelectionVo"/>
-        <where>
-            <if test="studentId != null  and studentId != ''"> and student_id = #{studentId}</if>
-            <if test="classId != null "> and class_id = #{classId}</if>
-            <if test="normalScore != null "> and normal_score = #{normalScore}</if>
-            <if test="testScore != null "> and test_score = #{testScore}</if>
-            <if test="totalScore != null "> and total_score = #{totalScore}</if>
-        </where>
-    </select>
+        SELECT
+        /* 1. 凡是没在下面 GROUP BY 里的字段，必须全部加 MAX() 躲避 MySQL 报错 */
+        MAX(c.class_id) as class_id,
+        c.course_id,
+        MAX(co.course_name) as course_name,
+        c.semester,
+        MAX(u.nick_name) as teacher_name,
+        c.staff_id as teacher_id,
+        c.class_section,
 
-    <select id="selectStuSelectionBySelectionId" parameterType="Long" resultMap="StuSelectionResult">
-        <include refid="selectStuSelectionVo"/>
-        where selection_id = #{selectionId}
+        /* 2. 将这门课所有分散的时间和教室拼在一起 */
+        GROUP_CONCAT(DISTINCT CONCAT('周', c.day_of_week, ' 第', c.lesson_start, '-', c.lesson_end, '节')
+        ORDER BY c.day_of_week SEPARATOR ' | ') as class_time,
+        GROUP_CONCAT(DISTINCT c.classroom_id SEPARATOR ' / ') as classroom_id,
+
+        /* 3. 统计这组课的容量和已选人数 */
+        MAX(c.capacity) as capacity,
+        MAX(c.selected_num) as selected_num,
+
+        /* 4. 只要这组课里任何一节被当前学生选了，整个“父亲课”就显示已选 */
+        MAX(CASE WHEN s.selection_id IS NOT NULL THEN 1 ELSE 0 END) as is_selected,
+        MAX(s.selection_id) as selection_id
+        FROM stu_class c
+        INNER JOIN stu_course co ON c.course_id = co.course_id
+        INNER JOIN sys_user u ON c.staff_id = u.user_name
+        /* 核心：只关联当前学生的选课，防止人数翻倍 */
+        LEFT JOIN stu_selection s ON c.class_id = s.class_id AND s.student_id = #{studentId}
+        <where>
+            <if test="courseName != null and courseName != ''"> AND co.course_name LIKE concat('%', #{courseName}, '%')</if>
+            <if test="teacherName != null and teacherName != ''"> AND u.nick_name LIKE concat('%', #{teacherName}, '%')</if>
+        </where>
+        /* 5. 按照这四个维度进行聚合，这就是你的“虚拟父亲课” */
+        GROUP BY c.course_id, c.staff_id, c.class_section, c.semester
+        ORDER BY class_id DESC
     </select>
 
     <insert id="insertStuSelection" parameterType="StuSelection" useGeneratedKeys="true" keyProperty="selectionId">
-        insert into stu_selection
-        <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="studentId != null and studentId != ''">student_id,</if>
-            <if test="classId != null">class_id,</if>
-            <if test="normalScore != null">normal_score,</if>
-            <if test="testScore != null">test_score,</if>
-            <if test="totalScore != null">total_score,</if>
-            create_time
-        </trim>
-        <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="studentId != null and studentId != ''">#{studentId},</if>
-            <if test="classId != null">#{classId},</if>
-            <if test="normalScore != null">#{normalScore},</if>
-            <if test="testScore != null">#{testScore},</if>
-            <if test="totalScore != null">#{totalScore},</if>
-            sysdate()
-        </trim>
+        insert into stu_selection (student_id, class_id, create_time)
+        values (#{studentId}, #{classId}, sysdate())
     </insert>
-
-    <update id="updateStuSelection" parameterType="StuSelection">
-        update stu_selection
-        <trim prefix="SET" suffixOverrides=",">
-            <if test="studentId != null and studentId != ''">student_id = #{studentId},</if>
-            <if test="classId != null">class_id = #{classId},</if>
-            <if test="normalScore != null">normal_score = #{normalScore},</if>
-            <if test="testScore != null">test_score = #{testScore},</if>
-            <if test="totalScore != null">total_score = #{totalScore},</if>
-        </trim>
-        where selection_id = #{selectionId}
-    </update>
-
-    <delete id="deleteStuSelectionBySelectionId" parameterType="Long">
-        delete from stu_selection where selection_id = #{selectionId}
-    </delete>
 
     <delete id="deleteStuSelectionBySelectionIds" parameterType="Long">
         delete from stu_selection where selection_id in
-        <foreach item="selectionId" collection="array" open="(" separator="," close=")">
-            #{selectionId}
-        </foreach>
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
     </delete>
 </mapper>
