@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-// 选课大厅：获取所有老师开的课
+// 查询选课大厅列表
 export function listSelection(query) {
   return request({
     url: '/school/selection/list',
@@ -9,7 +9,7 @@ export function listSelection(query) {
   })
 }
 
-// 我的课表：获取当前学生选中的课
+// 我的已选课程（顶部小表）
 export function getMySchedule() {
   return request({
     url: '/school/selection/mySchedule',
@@ -17,19 +17,28 @@ export function getMySchedule() {
   })
 }
 
-// 选课
-export function addSelection(data) {
+// 选课操作
+export function selectSelection(classId) {
   return request({
     url: '/school/selection',
     method: 'post',
-    data: data
+    data: { classId: classId }
   })
 }
 
-// 退选
+// 退选操作
+export function unselectSelection(selectionId) {
+  return request({
+    url: '/school/selection/' + selectionId,
+    method: 'delete'
+  })
+}
+
+// 删除学生自主选课
 export function delSelection(id) {
   return request({
     url: '/school/selection/' + id,
     method: 'delete'
   })
 }
+

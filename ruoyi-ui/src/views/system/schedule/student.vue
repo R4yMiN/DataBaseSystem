@@ -94,7 +94,7 @@ export default {
     getList() {
       this.loading = true
       getMySchedule().then(res => {
-        this.scheduleList = res.data || []
+        this.scheduleList = res.rows || []
         this.buildGrid()
       }).finally(() => {
         this.loading = false
@@ -133,7 +133,7 @@ export default {
           const card = {
             courseName: item.courseName || item.courseId,
             teacherName: item.teacherName,
-            classPlace: item.classPlace,
+            classPlace: item.classroomId || item.classPlace,
             time: `第${s.start}-${s.end}节`
           }
           for (let p = s.start; p <= s.end && p <= 12; p++) {
@@ -151,16 +151,23 @@ export default {
     parseClassTime(classTime) {
       if (!classTime) return []
       const parts = classTime.split('|').map(p => p.trim()).filter(Boolean)
-      const dayMap = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 7, '天': 7 }
+      // 支持中文数字（周一、周二）和阿拉伯数字（周1、周2）
+      const dayMapCN = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 7, '天': 7 }
       const slots = []
-      const regex = /周([一二三四五六日天])[^\d]*?(\d+)(?:[-~至到—](\d+))?/;
+      // 正则同时匹配 "周一" 或 "周1" 或 "周日"
+      const regex = /周([一二三四五六日天]|\d)[^\d]*?(\d+)(?:[-~至到—](\d+))?/;
       parts.forEach(p => {
         const m = p.match(regex)
         if (m) {
-          const day = dayMap[m[1]] || 0
+          let day = 0
+          if (dayMapCN[m[1]]) {
+            day = dayMapCN[m[1]]
+          } else {
+            day = Number(m[1]) || 0
+          }
           const start = Number(m[2]) || 1
           const end = Number(m[3] || m[2]) || start
-          if (day) {
+          if (day >= 1 && day <= 7) {
             slots.push({ day, start, end })
           }
         }

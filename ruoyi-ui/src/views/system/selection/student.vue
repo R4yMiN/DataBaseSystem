@@ -10,7 +10,12 @@
 <el-table-column label="教师" align="center" prop="teacherName" width="100" />
 <el-table-column label="学期" align="center" prop="semester" width="100" />
 <el-table-column label="上课时间" align="center" prop="classTime" width="120" />
-<el-table-column label="上课地点" align="center" prop="classPlace" width="100" />
+<el-table-column label="上课地点" align="center" prop="classroomId" width="100" />
+<el-table-column label="操作" align="center" width="80">
+<template slot-scope="scope">
+<el-button type="danger" size="mini" @click="handleUnselect(scope.row)">退课</el-button>
+</template>
+</el-table-column>
 </el-table>
 <div v-if="mySchedule.length === 0 && !loadingSchedule" style="text-align: center; color: #999; padding: 20px;">
 暂无已选课程
@@ -132,7 +137,7 @@ this.loading = false
 loadMySchedule() {
 this.loadingSchedule = true
 getMySchedule().then(response => {
-this.mySchedule = response.data || []
+this.mySchedule = response.rows || []
 }).finally(() => {
 this.loadingSchedule = false
 })
@@ -140,7 +145,7 @@ this.loadingSchedule = false
 handleSelect(row) {
 const courseName = row && row.courseName ? row.courseName : ''
 this.$modal.confirm(`是否确认选择课程"${courseName}"？`).then(() => {
-return selectSelection(row.id)
+return selectSelection(row.classId)
 }).then((res) => {
 if (res.code === 200) {
 this.$modal.msgSuccess('选课成功')
@@ -153,8 +158,13 @@ this.$modal.msgError(res.msg || '选课失败')
 },
 handleUnselect(row) {
 const courseName = row && row.courseName ? row.courseName : ''
+const selectionId = row.selectionId || row.id
+if (!selectionId) {
+	this.$modal.msgError('未找到选课记录ID，无法退课')
+	return
+}
 this.$modal.confirm(`是否确认退选课程"${courseName}"？`).then(() => {
-return unselectSelection(row.id)
+return unselectSelection(selectionId)
 }).then(() => {
 this.$modal.msgSuccess('退选成功')
 this.getList()
