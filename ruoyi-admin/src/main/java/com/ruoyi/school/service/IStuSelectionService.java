@@ -28,6 +28,11 @@ public interface IStuSelectionService
     public List<StuSelection> selectStuSelectionList(StuSelection stuSelection);
 
     /**
+     * 我的已选课程（顶部表格）
+     */
+    public List<StuSelection> selectMySchedule(String studentId);
+
+    /**
      * 新增选课成绩
      * 
      * @param stuSelection 选课成绩

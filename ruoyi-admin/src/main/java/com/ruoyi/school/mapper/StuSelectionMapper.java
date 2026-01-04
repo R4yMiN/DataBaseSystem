@@ -18,6 +18,11 @@ public interface StuSelectionMapper
     /** 查询选课成绩列表 */
     public List<StuSelection> selectStuSelectionList(StuSelection stuSelection);
 
+    /**
+     * 我的已选课程（顶部表格专用）：只从 stu_selection 关联查询
+     */
+    public List<StuSelection> selectMySchedule(@Param("studentId") String studentId);
+
     /** 新增选课成绩 */
     public int insertStuSelection(StuSelection stuSelection);
 

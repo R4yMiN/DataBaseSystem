@@ -41,12 +41,8 @@ public class StuSelectionController extends BaseController {
      */
     @GetMapping("/mySchedule")
     public TableDataInfo mySchedule() {
-        StuSelection query = new StuSelection();
-        query.setStudentId(SecurityUtils.getUsername());
-        // 增加标记，告诉 XML 只查已选中的
-        query.getParams().put("onlyMy", "1");
-
-        List<StuSelection> list = stuSelectionService.selectStuSelectionList(query);
+        String studentId = SecurityUtils.getUsername();
+        List<StuSelection> list = stuSelectionService.selectMySchedule(studentId);
         return getDataTable(list);
     }
 

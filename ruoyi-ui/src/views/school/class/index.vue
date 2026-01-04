@@ -190,7 +190,7 @@
         <el-alert v-else title="说明：提交后请等待教务处安排具体时间和教室。" type="info" show-icon :closable="false" />
       </el-form>
       <div slot="footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
+        <el-button type="primary" :loading="submitLoading" :disabled="submitLoading" @click="submitForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
@@ -206,6 +206,7 @@ export default {
   data() {
     return {
       loading: true,
+      submitLoading: false,
       viewType: 'list',
       isAdmin: this.$store.getters.roles.includes('admin') || this.$store.getters.roles.includes('dean'),
       courseOptions: [], // 课程库
@@ -274,13 +275,17 @@ export default {
       });
     },
     submitForm() {
+      if (this.submitLoading) return;
       this.$refs["form"].validate(valid => {
         if (valid) {
+          this.submitLoading = true;
           const action = this.form.classId != null ? updateClass : addClass;
           action(this.form).then(() => {
             this.$modal.msgSuccess("提交成功");
             this.open = false;
             this.getList();
+          }).finally(() => {
+            this.submitLoading = false;
           });
         }
       });

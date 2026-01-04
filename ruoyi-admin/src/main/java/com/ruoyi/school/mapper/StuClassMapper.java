@@ -37,6 +37,11 @@ public interface StuClassMapper
     public int insertStuClass(StuClass stuClass);
 
     /**
+     * 检查是否已存在相同的开课记录（用于防止重复提交）
+     */
+    public int existsDuplicateStuClass(StuClass stuClass);
+
+    /**
      * 修改开课
      *
      * @param stuClass 开课

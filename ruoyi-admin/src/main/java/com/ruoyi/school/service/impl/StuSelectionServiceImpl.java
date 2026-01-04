@@ -31,6 +31,11 @@ public class StuSelectionServiceImpl implements IStuSelectionService
     }
 
     @Override
+    public List<StuSelection> selectMySchedule(String studentId) {
+        return stuSelectionMapper.selectMySchedule(studentId);
+    }
+
+    @Override
     @Transactional
     public int insertStuSelection(StuSelection stuSelection) {
         // 1. 获取选中的那行课（父亲）
@@ -67,13 +72,6 @@ public class StuSelectionServiceImpl implements IStuSelectionService
     @Transactional
     public int deleteStuSelectionBySelectionIds(Long[] selectionIds)
     {
-        for (Long id : selectionIds) {
-            StuSelection s = stuSelectionMapper.selectStuSelectionBySelectionId(id);
-            if (s != null) {
-                // 重点：调用上面接口里定义的 minusSelectedNum
-                stuClassMapper.minusSelectedNum(s.getClassId());
-            }
-        }
         return stuSelectionMapper.deleteStuSelectionBySelectionIds(selectionIds);
     }
 

@@ -57,6 +57,11 @@ public class StuClassServiceImpl implements IStuClassService
             stuClass.setStaffId(SecurityUtils.getUsername());
         }
 
+        // 1.1 防止重复提交：同条件记录已存在则直接拦截
+        if (stuClassMapper.existsDuplicateStuClass(stuClass) > 0) {
+            throw new ServiceException("开课失败：已存在相同的开课记录（请勿重复提交）");
+        }
+
         // 2. 数字化冲突校验（保留你原有的逻辑）
         if (stuClassMapper.checkSchedulingConflict(stuClass) > 0) {
             throw new ServiceException("排课失败：该时段内已有课程安排！");
@@ -69,6 +74,10 @@ public class StuClassServiceImpl implements IStuClassService
      */
     @Override
     public int updateStuClass(StuClass stuClass) {
+        // 修改时也做一次重复判断（避免把两条改成一模一样）
+        if (stuClassMapper.existsDuplicateStuClass(stuClass) > 0) {
+            throw new ServiceException("修改失败：已存在相同的开课记录");
+        }
         if (stuClassMapper.checkSchedulingConflict(stuClass) > 0) {
             throw new ServiceException("修改失败：存在排课冲突！");
         }
