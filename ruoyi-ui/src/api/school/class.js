@@ -43,10 +43,11 @@ export function delClass(classId) {
   })
 }
 
-//踢人过程
+// 随机抽签踢人
 export function executeRandomKick() {
   return request({
     url: '/school/class/randomKick',
     method: 'post'
   })
 }
+

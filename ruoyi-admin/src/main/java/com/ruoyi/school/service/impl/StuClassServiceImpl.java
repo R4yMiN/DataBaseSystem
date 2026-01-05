@@ -10,6 +10,7 @@ import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.school.mapper.StuClassMapper;
 import com.ruoyi.school.domain.StuClass;
 import com.ruoyi.school.service.IStuClassService;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 开课Service业务层处理
@@ -62,6 +63,19 @@ public class StuClassServiceImpl implements IStuClassService
             throw new ServiceException("开课失败：已存在相同的开课记录（请勿重复提交）");
         }
 
+        // 2. 【核心逻辑】如果是老师申请的主课程，自动编排班级号
+        if (stuClass.getIsPrimary() != null && stuClass.getIsPrimary() == 1) {
+            // 统计该课程在当前学期已经开了多少个班
+            StuClass countQuery = new StuClass();
+            countQuery.setCourseId(stuClass.getCourseId());
+            countQuery.setSemester(stuClass.getSemester());
+            countQuery.setIsPrimary(1);
+            // 【关键修改】：这里绝对不要写 countQuery.setStaffId(...) ！！！
+
+            int count = stuClassMapper.selectStuClassList(countQuery).size();
+            stuClass.setClassSection(String.format("%02d班", count + 1));
+        }
+
         // 2. 数字化冲突校验（保留你原有的逻辑）
         if (stuClassMapper.checkSchedulingConflict(stuClass) > 0) {
             throw new ServiceException("排课失败：该时段内已有课程安排！");
@@ -85,7 +99,27 @@ public class StuClassServiceImpl implements IStuClassService
     }
 
     @Override
+    @Transactional
     public int deleteStuClassByClassIds(Long[] classIds) {
+        for (Long id : classIds) {
+            StuClass current = stuClassMapper.selectStuClassByClassId(id);
+            if (current != null && current.getIsPrimary() != null && current.getIsPrimary() == 1) {
+                // 【核心逻辑】如果是主课程，找出该班级所有的追加时段并一并删除
+                StuClass childrenQuery = new StuClass();
+                childrenQuery.setCourseId(current.getCourseId());
+                childrenQuery.setStaffId(current.getStaffId());
+                childrenQuery.setSemester(current.getSemester());
+                childrenQuery.setClassSection(current.getClassSection());
+                childrenQuery.setIsPrimary(0); // 找追加时段
+
+                List<StuClass> children = stuClassMapper.selectStuClassList(childrenQuery);
+                if (children != null && children.size() > 0) {
+                    Long[] childIds = children.stream().map(StuClass::getClassId).toArray(Long[]::new);
+                    stuClassMapper.deleteStuClassByClassIds(childIds);
+                }
+            }
+        }
+        // 最后删除选中的记录本身
         return stuClassMapper.deleteStuClassByClassIds(classIds);
     }
 

@@ -3,194 +3,86 @@
 <mapper namespace="com.ruoyi.school.mapper.StuClassMapper">
 
     <resultMap type="StuClass" id="StuClassResult">
-        <result property="classId" column="class_id" />
-        <result property="semester" column="semester" />
-        <result property="courseId" column="course_id" />
-        <result property="classSection" column="class_section" />
-        <result property="staffId" column="staff_id" />
-        <result property="dayOfWeek" column="day_of_week" />
-        <result property="lessonStart" column="lesson_start" />
-        <result property="lessonEnd" column="lesson_end" />
-        <result property="weekStart" column="week_start" />
-        <result property="weekEnd" column="week_end" />
-        <result property="weekType" column="week_type" />
-        <result property="classroomId" column="classroom_id" />
-        <result property="capacity" column="capacity" />
-        <result property="selectedNum" column="selected_num" />
-        <result property="courseName" column="course_name" />
-        <result property="staffName" column="staff_name" />
+        <result property="classId"       column="class_id"    />
+        <result property="semester"      column="semester"    />
+        <result property="courseId"      column="course_id"   />
+        <result property="classSection"  column="class_section" />
+        <result property="staffId"       column="staff_id"    />
+        <result property="dayOfWeek"     column="day_of_week" />
+        <result property="lessonStart"   column="lesson_start" />
+        <result property="lessonEnd"     column="lesson_end"  />
+        <result property="classroomId"   column="classroom_id" />
+        <result property="capacity"      column="capacity"    />
+        <result property="selectedNum"   column="selected_num" />
+        <result property="isPrimary"     column="is_primary"  />
+        <result property="courseName"    column="course_name" />
+        <result property="staffName"     column="staff_name"  />
     </resultMap>
 
-    <sql id="selectStuClassVo">
-        select distinct
-            c.class_id, c.semester, c.course_id, c.staff_id, c.capacity, c.selected_num,
-            c.class_section, c.day_of_week, c.lesson_start, c.lesson_end, c.week_start,
-            c.week_end, c.week_type, c.classroom_id,
-            co.course_name,
-            u.nick_name as staff_name
-        from stu_class c
-            left join stu_course co on c.course_id = co.course_id
-            left join (
-                select u1.user_name, u1.nick_name
-                from sys_user u1
-                inner join (
-                    select
-                        user_name,
-                        max(case when del_flag = '0' then user_id end) as active_user_id,
-                        max(user_id) as any_user_id
-                    from sys_user
-                    group by user_name
-                ) t on t.user_name = u1.user_name
-                and u1.user_id = ifnull(t.active_user_id, t.any_user_id)
-            ) u on c.staff_id = u.user_name
-    </sql>
-
+    <!-- 修复点 1：完善列表查询，加入班级号和学期的过滤 -->
     <select id="selectStuClassList" parameterType="StuClass" resultMap="StuClassResult">
-        <include refid="selectStuClassVo" />
+        select * from vw_class_full_info
         <where>
-            <if test="courseId != null and courseId != ''"> and c.course_id = #{courseId}</if>
-            <if test="staffId != null and staffId != ''"> and c.staff_id = #{staffId}</if>
+            <if test="courseId != null  and courseId != ''"> and course_id = #{courseId}</if>
+            <if test="staffId != null  and staffId != ''"> and staff_id = #{staffId}</if>
+            <if test="semester != null  and semester != ''"> and semester = #{semester}</if>
+            <if test="classSection != null  and classSection != ''"> and class_section = #{classSection}</if>
+            <if test="isPrimary != null"> and is_primary = #{isPrimary}</if>
         </where>
-        order by c.class_id desc
+        order by class_id desc
     </select>
 
-    <select id="selectStuClassByClassId" parameterType="Long" resultMap="StuClassResult">
-        <include refid="selectStuClassVo" />
-        where c.class_id = #{classId}
-        limit 1
-    </select>
-
-    <!-- 防重复：同条件的开课记录已存在则返回>0 -->
     <select id="existsDuplicateStuClass" parameterType="StuClass" resultType="int">
-        select count(*) from stu_class c
+        select count(*) from stu_class
+        where semester = #{semester} and course_id = #{courseId} and staff_id = #{staffId}
+        and class_section = #{classSection} and day_of_week = #{dayOfWeek}
+        <if test="classId != null"> and class_id != #{classId} </if>
+    </select>
+
+    <select id="checkSchedulingConflict" parameterType="StuClass" resultType="int">
+        select count(*) from stu_class
         <where>
-            and c.semester = #{semester}
-            and c.course_id = #{courseId}
-            and c.staff_id = #{staffId}
-
-            <!--
-              教师“申请开课”阶段通常不包含 dayOfWeek（待教务排课）。
-              dayOfWeek 为空时，认为是“同一老师、同一学期、同一课程、同一班级号”的重复申请。
-            -->
-            <choose>
-                <when test="dayOfWeek == null">
-                    and c.day_of_week is null
-                    <if test="classSection != null and classSection != ''">
-                        and c.class_section = #{classSection}
-                    </if>
-                </when>
-                <otherwise>
-                    and c.day_of_week = #{dayOfWeek}
-                    <if test="lessonStart != null">
-                        and c.lesson_start = #{lessonStart}
-                    </if>
-                    <if test="lessonEnd != null">
-                        and c.lesson_end = #{lessonEnd}
-                    </if>
-                    <if test="classroomId != null and classroomId != ''">
-                        and c.classroom_id = #{classroomId}
-                    </if>
-                    <if test="classSection != null and classSection != ''">
-                        and c.class_section = #{classSection}
-                    </if>
-                </otherwise>
-            </choose>
-
-            <if test="classId != null">
-                and c.class_id != #{classId}
-            </if>
+            semester = #{semester} and day_of_week = #{dayOfWeek}
+            and lesson_start &lt;= #{lessonEnd} and lesson_end &gt;= #{lessonStart}
+            and (classroom_id = #{classroomId} or staff_id = #{staffId})
+            <if test="classId != null"> and class_id != #{classId} </if>
         </where>
+    </select>
+
+    <select id="selectAllCourseOptions" resultType="map">
+        select course_id as courseId, course_name as courseName from stu_course
+    </select>
+
+    <!-- 修复点 2：确保根据 ID 查询时也带出所有字段 -->
+    <select id="selectStuClassByClassId" parameterType="Long" resultMap="StuClassResult">
+        select * from vw_class_full_info where class_id = #{classId}
     </select>
 
     <insert id="insertStuClass" parameterType="StuClass" useGeneratedKeys="true" keyProperty="classId">
-        insert into stu_class
-        <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="semester != null">semester,</if>
-            <if test="courseId != null">course_id,</if>
-            <if test="classSection != null">class_section,</if>
-            <if test="staffId != null">staff_id,</if>
-            <if test="dayOfWeek != null">day_of_week,</if>
-            <if test="lessonStart != null">lesson_start,</if>
-            <if test="lessonEnd != null">lesson_end,</if>
-            <if test="weekStart != null">week_start,</if>
-            <if test="weekEnd != null">week_end,</if>
-            <if test="classroomId != null">classroom_id,</if>
-            <if test="capacity != null">capacity,</if>
-        </trim>
-        <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="semester != null">#{semester},</if>
-            <if test="courseId != null">#{courseId},</if>
-            <if test="classSection != null">#{classSection},</if>
-            <if test="staffId != null">#{staffId},</if>
-            <if test="dayOfWeek != null">#{dayOfWeek},</if>
-            <if test="lessonStart != null">#{lessonStart},</if>
-            <if test="lessonEnd != null">#{lessonEnd},</if>
-            <if test="weekStart != null">#{weekStart},</if>
-            <if test="weekEnd != null">#{weekEnd},</if>
-            <if test="classroomId != null">#{classroomId},</if>
-            <if test="capacity != null">#{capacity},</if>
-        </trim>
+        insert into stu_class (
+            semester, course_id, class_section, staff_id, day_of_week,
+            lesson_start, lesson_end, classroom_id, capacity, is_primary
+        ) values (
+                     #{semester}, #{courseId}, #{classSection}, #{staffId}, #{dayOfWeek},
+                     #{lessonStart}, #{lessonEnd}, #{classroomId}, #{capacity}, #{isPrimary}
+                 )
     </insert>
 
     <update id="updateStuClass" parameterType="StuClass">
         update stu_class
         <set>
-            <if test="semester != null">semester = #{semester},</if>
-            <if test="courseId != null">course_id = #{courseId},</if>
-            <if test="classSection != null">class_section = #{classSection},</if>
-            <if test="staffId != null">staff_id = #{staffId},</if>
             <if test="dayOfWeek != null">day_of_week = #{dayOfWeek},</if>
             <if test="lessonStart != null">lesson_start = #{lessonStart},</if>
             <if test="lessonEnd != null">lesson_end = #{lessonEnd},</if>
-            <if test="weekStart != null">week_start = #{weekStart},</if>
-            <if test="weekEnd != null">week_end = #{weekEnd},</if>
-            <if test="weekType != null">week_type = #{weekType},</if>
             <if test="classroomId != null">classroom_id = #{classroomId},</if>
             <if test="capacity != null">capacity = #{capacity},</if>
-            <if test="selectedNum != null">selected_num = #{selectedNum},</if>
+            <if test="isPrimary != null">is_primary = #{isPrimary},</if>
         </set>
         where class_id = #{classId}
     </update>
 
-    <delete id="deleteStuClassByClassId" parameterType="Long">
-        delete from stu_class where class_id = #{classId}
-    </delete>
-
     <delete id="deleteStuClassByClassIds" parameterType="Long">
         delete from stu_class where class_id in
-        <foreach item="classId" collection="array" open="(" separator="," close=")">
-            #{classId}
-        </foreach>
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
     </delete>
-
-    <select id="checkSchedulingConflict" parameterType="StuClass" resultType="int">
-        select count(*) from stu_class
-        <where>
-            and day_of_week = #{dayOfWeek}
-            and lesson_start &lt;= #{lessonEnd} and lesson_end &gt;= #{lessonStart}
-            and (classroom_id = #{classroomId} or staff_id = #{staffId})
-            <if test="classId != null"> and class_id != #{classId}</if>
-        </where>
-    </select>
-
-    <select id="selectAllCourseOptions" resultType="map">
-        select course_id as courseId, course_name as courseName, credit from stu_course
-    </select>
-
-    <!-- 已选人数 +1（若使用数据库触发器维护人数，此语句不会被调用） -->
-    <update id="plusSelectedNum" parameterType="Long">
-        update stu_class set selected_num = selected_num + 1 where class_id = #{classId}
-    </update>
-
-    <!-- 已选人数 -1，使用 CASE 防止出现负数；若触发器已维护人数，可不调用此方法 -->
-    <update id="minusSelectedNum" parameterType="Long">
-        update stu_class
-        set selected_num = case when selected_num > 0 then selected_num - 1 else 0 end
-        where class_id = #{classId}
-    </update>
-
-    <!-- 随机抽签剔除：这里做空操作以避免绑定报错，后续若需要可改为调用存储过程 -->
-    <update id="executeRandomKick">
-        update stu_class set selected_num = selected_num where 1 = 0
-    </update>
 </mapper>

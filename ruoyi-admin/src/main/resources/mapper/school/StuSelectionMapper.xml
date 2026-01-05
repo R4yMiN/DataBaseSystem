@@ -4,195 +4,84 @@
 
     <resultMap type="StuSelection" id="StuSelectionResult">
         <result property="selectionId" column="selection_id" />
-        <result property="studentId" column="student_id" />
-        <result property="classId" column="class_id" />
-        <result property="courseName" column="course_name" />
-        <result property="teacherName" column="teacher_name" />
-        <result property="classTime" column="class_time" />
+        <result property="studentId"   column="student_id" />
+        <result property="classId"     column="class_id" />
+        <result property="courseId"    column="course_id" />
+        <result property="staffId"     column="staff_id" />
+        <result property="semester"    column="semester" />
+        <result property="classSection" column="class_section" />
         <result property="classroomId" column="classroom_id" />
-        <result property="capacity" column="capacity" />
+        <result property="courseName"  column="course_name" />
+        <result property="teacherName" column="teacher_name" />
+        <result property="classTime"   column="class_time" />
+        <result property="capacity"    column="capacity" />
         <result property="selectedNum" column="selected_num" />
-        <result property="isSelected" column="is_selected" />
+        <result property="isSelected"  column="is_selected" />
     </resultMap>
 
-    <select id="selectStuSelectionList" parameterType="StuSelection" resultMap="StuSelectionResult">
-        <choose>
-            <!-- 情况1：查询"我的已选课程"（onlyMy=1） - 从 stu_selection 表查询 -->
-            <when test="params != null and params['onlyMy'] == '1'">
-                SELECT
-                    s.selection_id,
-                    s.student_id,
-                    s.class_id,
-                    co.course_name,
-                    u.nick_name as teacher_name,
-                    c.semester,
-                    GROUP_CONCAT(DISTINCT CONCAT('周', c.day_of_week, ' 第', c.lesson_start, '-', c.lesson_end, '节')
-                        ORDER BY c.day_of_week SEPARATOR ' | ') as class_time,
-                    GROUP_CONCAT(DISTINCT c.classroom_id SEPARATOR ' / ') as classroom_id,
-                    MAX(c.capacity) as capacity,
-                    MAX(c.selected_num) as selected_num,
-                    1 as is_selected
-                FROM stu_selection s
-                INNER JOIN stu_class c ON s.class_id = c.class_id
-                INNER JOIN stu_course co ON c.course_id = co.course_id
-                INNER JOIN (
-                    select u1.user_name, u1.nick_name
-                    from sys_user u1
-                    inner join (
-                        select
-                            user_name,
-                            max(case when del_flag = '0' then user_id end) as active_user_id,
-                            max(user_id) as any_user_id
-                        from sys_user
-                        group by user_name
-                    ) t on t.user_name = u1.user_name
-                    and u1.user_id = ifnull(t.active_user_id, t.any_user_id)
-                ) u ON c.staff_id = u.user_name
-                WHERE s.student_id = #{studentId}
-                <if test="courseName != null and courseName != ''"> AND co.course_name LIKE concat('%', #{courseName}, '%')</if>
-                <if test="teacherName != null and teacherName != ''"> AND u.nick_name LIKE concat('%', #{teacherName}, '%')</if>
-                GROUP BY s.selection_id, s.student_id, s.class_id, co.course_name, u.nick_name, c.semester, c.course_id, c.staff_id, c.class_section
-                ORDER BY s.selection_id DESC
-            </when>
-            
-            <!-- 情况2：查询"选课大厅"（显示所有课程，标记是否已选） - 从 stu_class 表查询 -->
-            <otherwise>
-                SELECT
-                    MAX(c.class_id) as class_id,
-                    c.course_id,
-                    MAX(co.course_name) as course_name,
-                    c.semester,
-                    MAX(u.nick_name) as teacher_name,
-                    c.staff_id as teacher_id,
-                    c.class_section,
-                    GROUP_CONCAT(DISTINCT CONCAT('周', c.day_of_week, ' 第', c.lesson_start, '-', c.lesson_end, '节')
-                        ORDER BY c.day_of_week SEPARATOR ' | ') as class_time,
-                    GROUP_CONCAT(DISTINCT c.classroom_id SEPARATOR ' / ') as classroom_id,
-                    MAX(c.capacity) as capacity,
-                    MAX(c.selected_num) as selected_num,
-                    MAX(CASE WHEN s.selection_id IS NOT NULL THEN 1 ELSE 0 END) as is_selected,
-                    MAX(s.selection_id) as selection_id
-                FROM stu_class c
-                INNER JOIN stu_course co ON c.course_id = co.course_id
-                INNER JOIN (
-                    select u1.user_name, u1.nick_name
-                    from sys_user u1
-                    inner join (
-                        select
-                            user_name,
-                            max(case when del_flag = '0' then user_id end) as active_user_id,
-                            max(user_id) as any_user_id
-                        from sys_user
-                        group by user_name
-                    ) t on t.user_name = u1.user_name
-                    and u1.user_id = ifnull(t.active_user_id, t.any_user_id)
-                ) u ON c.staff_id = u.user_name
-                LEFT JOIN stu_selection s ON c.class_id = s.class_id AND s.student_id = #{studentId}
-                <where>
-                    <if test="courseName != null and courseName != ''"> AND co.course_name LIKE concat('%', #{courseName}, '%')</if>
-                    <if test="teacherName != null and teacherName != ''"> AND u.nick_name LIKE concat('%', #{teacherName}, '%')</if>
-                </where>
-                GROUP BY c.course_id, c.staff_id, c.class_section, c.semester
-                ORDER BY class_id DESC
-            </otherwise>
-        </choose>
-    </select>
-    
-    <!-- 检查学生是否已选过该课程 -->
-    <select id="checkAlreadySelected" resultType="int">
-        SELECT COUNT(1)
-        FROM stu_selection
-        WHERE student_id = #{studentId} AND class_id = #{classId}
-    </select>
-    
-    <!-- 检查学生时间冲突 -->
-    <select id="checkStudentTimeConflict" resultType="int">
-        SELECT COUNT(1)
+    <!-- 我的课表：专门给顶部的表格使用 -->
+    <select id="selectMySchedule" resultMap="StuSelectionResult">
+        SELECT
+            MIN(s.selection_id) as selection_id,
+            s.student_id,
+            c.course_id,
+            c.staff_id,
+            c.semester,
+            c.class_section,
+            MAX(co.course_name) as course_name,
+            MAX(u.nick_name) as teacher_name,
+            GROUP_CONCAT(DISTINCT CONCAT('周', c.day_of_week, ' 第', c.lesson_start, '-', c.lesson_end, '节') ORDER BY c.day_of_week SEPARATOR ' | ') as class_time,
+            GROUP_CONCAT(DISTINCT c.classroom_id SEPARATOR ' / ') as classroom_id,
+            MAX(c.capacity) as capacity,
+            MAX(c.selected_num) as selected_num,
+            1 as is_selected
         FROM stu_selection s
-        INNER JOIN stu_class c1 ON s.class_id = c1.class_id
-        INNER JOIN stu_class c2 ON c2.class_id = #{classId}
+                 INNER JOIN stu_class c ON s.class_id = c.class_id
+                 INNER JOIN stu_course co ON c.course_id = co.course_id
+                 LEFT JOIN sys_user u ON c.staff_id = u.user_name
         WHERE s.student_id = #{studentId}
-          AND c1.semester = c2.semester
-          AND c1.day_of_week = c2.day_of_week
-          AND NOT (c1.lesson_end &lt; c2.lesson_start OR c1.lesson_start &gt; c2.lesson_end)
+        GROUP BY s.student_id, c.course_id, c.staff_id, c.class_section, c.semester
+    </select>
+
+    <!-- 选课大厅：常规列表查询 -->
+    <select id="selectStuSelectionList" parameterType="StuSelection" resultMap="StuSelectionResult">
+        SELECT
+        c.class_id,
+        c.course_id,
+        c.semester,
+        c.staff_id,
+        c.classroom_id,
+        c.class_section,
+        c.capacity,
+        c.selected_num,
+        co.course_name,
+        u.nick_name as teacher_name,
+        (SELECT GROUP_CONCAT(CONCAT('周', sc.day_of_week, ' 第', sc.lesson_start, '-', sc.lesson_end, '节') SEPARATOR ' | ')
+        FROM stu_class sc
+        WHERE sc.course_id = c.course_id AND sc.class_section = c.class_section
+        AND sc.semester = c.semester AND sc.staff_id = c.staff_id
+        ) as class_time,
+        (CASE WHEN s.selection_id IS NOT NULL THEN 1 ELSE 0 END) as is_selected,
+        s.selection_id
+        FROM stu_class c
+        INNER JOIN stu_course co ON c.course_id = co.course_id
+        LEFT JOIN sys_user u ON c.staff_id = u.user_name
+        LEFT JOIN stu_selection s ON c.class_id = s.class_id AND s.student_id = #{studentId}
+        <where>
+            c.is_primary = 1
+            <if test="courseName != null and courseName != ''"> AND co.course_name LIKE concat('%', #{courseName}, '%')</if>
+            <if test="teacherName != null and teacherName != ''"> AND u.nick_name LIKE concat('%', #{teacherName}, '%')</if>
+        </where>
+        ORDER BY c.class_id DESC
+    </select>
+
+    <select id="checkAlreadySelected" resultType="int">
+        SELECT COUNT(1) FROM stu_selection WHERE student_id = #{studentId} AND class_id = #{classId}
     </select>
 
     <insert id="insertStuSelection" parameterType="StuSelection" useGeneratedKeys="true" keyProperty="selectionId">
-        insert into stu_selection (student_id, class_id)
-        values (#{studentId}, #{classId})
+        insert into stu_selection (student_id, class_id) values (#{studentId}, #{classId})
     </insert>
-
-    <!-- 根据选课ID查询单条记录 -->
-    <select id="selectStuSelectionBySelectionId" parameterType="Long" resultMap="StuSelectionResult">
-        SELECT
-            s.selection_id,
-            s.student_id,
-            s.class_id,
-            co.course_name,
-            u.nick_name as teacher_name,
-            c.semester,
-            CONCAT('周', c.day_of_week, ' 第', c.lesson_start, '-', c.lesson_end, '节') as class_time,
-            c.classroom_id,
-            c.capacity,
-            c.selected_num,
-            1 as is_selected
-        FROM stu_selection s
-        INNER JOIN stu_class c ON s.class_id = c.class_id
-        INNER JOIN stu_course co ON c.course_id = co.course_id
-        INNER JOIN (
-            select u1.user_name, u1.nick_name
-            from sys_user u1
-            inner join (
-                select
-                    user_name,
-                    max(case when del_flag = '0' then user_id end) as active_user_id,
-                    max(user_id) as any_user_id
-                from sys_user
-                group by user_name
-            ) t on t.user_name = u1.user_name
-            and u1.user_id = ifnull(t.active_user_id, t.any_user_id)
-        ) u ON c.staff_id = u.user_name
-        WHERE s.selection_id = #{selectionId}
-    </select>
-
-    <!-- 我的已选课程（顶部表格专用）：只从 stu_selection 取数据 -->
-    <select id="selectMySchedule" resultMap="StuSelectionResult">
-        SELECT
-            s.selection_id,
-            s.student_id,
-            s.class_id,
-            co.course_name,
-            u.nick_name as teacher_name,
-            c.semester,
-            CONCAT('周', c.day_of_week, ' 第', c.lesson_start, '-', c.lesson_end, '节') as class_time,
-            c.classroom_id,
-            c.capacity,
-            c.selected_num,
-            1 as is_selected
-        FROM stu_selection s
-        INNER JOIN stu_class c ON s.class_id = c.class_id
-        INNER JOIN stu_course co ON c.course_id = co.course_id
-        INNER JOIN (
-            select u1.user_name, u1.nick_name
-            from sys_user u1
-            inner join (
-                select
-                    user_name,
-                    max(case when del_flag = '0' then user_id end) as active_user_id,
-                    max(user_id) as any_user_id
-                from sys_user
-                group by user_name
-            ) t on t.user_name = u1.user_name
-            and u1.user_id = ifnull(t.active_user_id, t.any_user_id)
-        ) u ON c.staff_id = u.user_name
-        WHERE s.student_id = #{studentId}
-        ORDER BY s.selection_id DESC
-    </select>
-
-    <!-- 根据选课ID删除（退课） -->
-    <delete id="deleteStuSelectionBySelectionId" parameterType="Long">
-        DELETE FROM stu_selection WHERE selection_id = #{selectionId}
-    </delete>
 
     <delete id="deleteStuSelectionBySelectionIds" parameterType="Long">
         delete from stu_selection where selection_id in

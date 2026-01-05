@@ -22,6 +22,19 @@ public class StuSelection extends BaseEntity {
     private Long capacity;
     private Long selectedNum;
     private Integer isSelected; // 0-未选 1-已选
+    private String classSection;
+    private String courseId;     // 课程代码 (对应数据库 course_id)
+    private String semester;     // 学期 (对应数据库 semester)
+    private String staffId;      // 教工号 (对应数据库 staff_id)
+
+
+    // --- 必须有 Getter 和 Setter ---
+    public String getCourseId() { return courseId; }
+    public void setCourseId(String courseId) { this.courseId = courseId; }
+    public String getSemester() { return semester; }
+    public void setSemester(String semester) { this.semester = semester; }
+    public String getStaffId() { return staffId; }
+    public void setStaffId(String staffId) { this.staffId = staffId; }
 
     public void setSelectionId(Long selectionId) { this.selectionId = selectionId; }
     public Long getSelectionId() { return selectionId; }
@@ -50,4 +63,8 @@ public class StuSelection extends BaseEntity {
     public void setSelectedNum(Long selectedNum) { this.selectedNum = selectedNum; }
     public Integer getIsSelected() { return isSelected; }
     public void setIsSelected(Integer isSelected) { this.isSelected = isSelected; }
+    public String getClassSection() { return classSection; }
+    public void setClassSection(String classSection) { this.classSection = classSection; }
+
+
 }
