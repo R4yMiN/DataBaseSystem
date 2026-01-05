@@ -94,4 +94,11 @@ public interface StuClassMapper
      * @return 课程Map集合
      */
     public List<Map<String, Object>> selectAllCourseOptions();
+
+    /**
+     * 从教室表里提取所有教室列表
+     *
+     * @return 教室Map集合
+     */
+    public List<Map<String, Object>> selectAllClassroomOptions();
 }

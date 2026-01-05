@@ -53,6 +53,10 @@
         select course_id as courseId, course_name as courseName from stu_course
     </select>
 
+    <select id="selectAllClassroomOptions" resultType="map">
+        select classroom_id as classroomId, room_name as roomName from stu_classroom order by LENGTH(room_name), room_name
+    </select>
+
     <!-- 修复点 2：确保根据 ID 查询时也带出所有字段 -->
     <select id="selectStuClassByClassId" parameterType="Long" resultMap="StuClassResult">
         select * from vw_class_full_info where class_id = #{classId}

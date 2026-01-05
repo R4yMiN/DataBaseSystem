@@ -54,9 +54,9 @@ public class VwStudentSchedule extends BaseEntity
     @Excel(name = "上课地点")
     private String classPlace;
 
-    /** 选课状态（1-已选 0-已退课） */
-    @Excel(name = "选课状态", readConverterExp = "1=-已选,0=-已退课")
-    private Long status;
+    /** 选课状态（如：选课中/已退课） */
+    @Excel(name = "选课状态")
+    private String status;
 
     /** 是否被当前学生选中（0-未选 1-已选） */
     @Excel(name = "是否被当前学生选中", readConverterExp = "0=-未选,1=-已选")
@@ -162,12 +162,12 @@ public class VwStudentSchedule extends BaseEntity
         return classPlace;
     }
 
-    public void setStatus(Long status) 
+    public void setStatus(String status) 
     {
         this.status = status;
     }
 
-    public Long getStatus() 
+    public String getStatus() 
     {
         return status;
     }

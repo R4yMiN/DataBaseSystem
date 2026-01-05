@@ -129,6 +129,7 @@ export function download(url, params, filename, config) {
     transformRequest: [(params) => { return tansParams(params) }],
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     responseType: 'blob',
+    timeout: 60000, // 导出可能耗时，延长超时时间
     ...config
   }).then(async (data) => {
     const isBlob = blobValidate(data)

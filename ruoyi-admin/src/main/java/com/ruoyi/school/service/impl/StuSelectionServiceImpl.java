@@ -79,4 +79,9 @@ public class StuSelectionServiceImpl implements IStuSelectionService
     public int deleteStuSelectionBySelectionId(Long selectionId) {
         return stuSelectionMapper.deleteStuSelectionBySelectionId(selectionId);
     }
+
+    @Override
+    public List<StuSelection> selectStudentsByClassId(Long classId) {
+        return stuSelectionMapper.selectStudentsByClassId(classId);
+    }
 }

@@ -21,11 +21,37 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateTime"    column="update_time" />
     </resultMap>
 
-    <sql id="selectVwStudentScheduleVo">
-        select id, student_id, student_name, course_id, course_name, teacher_id, teacher_name,
-               semester, class_time, class_place, status, is_selected, create_time, update_time
-        from vw_student_schedule
-    </sql>
+        <!--
+            vw_student_schedule 视图字段：
+                selection_id, student_id, semester, course_id, course_name, teacher_id, teacher_name,
+                day_of_week, lesson_start, lesson_end, week_start, week_end, week_type,
+                classroom_id, class_status, capacity, selected_num, class_time_text
+
+            这里做必要的别名填充，保证导出不报“未知列”错误：
+                id           <- selection_id
+                class_place  <- classroom_id
+                status       <- class_status
+                class_time   <- class_time_text
+                student_name / create_time / update_time 视图中无对应列，使用 NULL 占位
+        -->
+        <sql id="selectVwStudentScheduleVo">
+                select
+                        selection_id as id,
+                        student_id,
+                        null as student_name,
+                        course_id,
+                        course_name,
+                        teacher_id,
+                        teacher_name,
+                        semester,
+                        class_time_text as class_time,
+                        classroom_id as class_place,
+                        class_status as status,
+                        1 as is_selected,
+                        null as create_time,
+                        null as update_time
+                from vw_student_schedule
+        </sql>
 
     <select id="selectVwStudentScheduleList" parameterType="com.ruoyi.school.domain.VwStudentSchedule" resultMap="VwStudentScheduleResult">
         <include refid="selectVwStudentScheduleVo" />

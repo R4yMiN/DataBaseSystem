@@ -27,16 +27,23 @@ public class StuClassController extends BaseController {
         // 2. 获取前端发来的 viewType (list 或 visual)
         String viewType = (String) stuClass.getParams().get("viewType");
 
-        if (!isAdmin) {
-            // 老师视角：绑定工号
-            stuClass.setStaffId(SecurityUtils.getUsername());
+        // 3. 如果前端没有传isPrimary，则根据角色和viewType来决定
+        if (stuClass.getIsPrimary() == null) {
+            if (!isAdmin) {
+                // 老师视角：绑定工号
+                stuClass.setStaffId(SecurityUtils.getUsername());
 
-            // 逻辑：如果是列表模式，隐藏追加课(isPrimary=1)；
-            // 如果是可视化模式(visual)，显示自己名下所有的课，包括追加的
-            if ("list".equals(viewType)) {
-                stuClass.setIsPrimary(1);
-            } else {
-                stuClass.setIsPrimary(null); // 不限，全显
+                // 逻辑：如果是列表模式，隐藏追加课(isPrimary=1)；
+                // 如果是可视化模式(visual)，显示自己名下所有的课，包括追加的
+                if ("list".equals(viewType)) {
+                    stuClass.setIsPrimary(1);
+                }
+            }
+        } else {
+            // 前端明确传了isPrimary，保留前端的值
+            // 但如果不是管理员，仍然要绑定工号
+            if (!isAdmin) {
+                stuClass.setStaffId(SecurityUtils.getUsername());
             }
         }
 
@@ -68,5 +75,10 @@ public class StuClassController extends BaseController {
     @GetMapping("/courseList")
     public AjaxResult getCourseList() {
         return success(stuClassService.selectAllCourseOptions());
+    }
+
+    @GetMapping("/classroomList")
+    public AjaxResult getClassroomList() {
+        return success(stuClassService.selectAllClassroomOptions());
     }
 }

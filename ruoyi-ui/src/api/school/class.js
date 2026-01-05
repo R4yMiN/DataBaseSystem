@@ -51,3 +51,10 @@ export function executeRandomKick() {
   })
 }
 
+// 获取教室列表
+export function listClassroom() {
+  return request({
+    url: '/school/class/classroomList',
+    method: 'get'
+  })
+}

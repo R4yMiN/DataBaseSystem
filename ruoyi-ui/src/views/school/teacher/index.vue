@@ -103,15 +103,24 @@
       <el-table-column type="教职工号" width="55" align="center" />
       <el-table-column label="工号" align="center" prop="staffId" />
       <el-table-column label="姓名" align="center" prop="name" />
-      <el-table-column label="性别" align="center" prop="sex" />
+      <el-table-column label="性别" align="center" prop="sex">
+        <template slot-scope="scope">
+          <span>{{ scope.row.sex === '0' ? '男' : (scope.row.sex === '1' ? '女' : scope.row.sex) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="出生日期" align="center" prop="dateOfBirth" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.dateOfBirth, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="院系号" align="center" prop="deptId" />
+      <el-table-column label="所属学院" align="center" prop="deptId">
+        <template slot-scope="scope">
+          <span>{{ getDeptName(scope.row.deptId) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="职称" align="center" prop="professionalRanks" />
       <el-table-column label="基本工资" align="center" prop="salary" />
-      <el-table-column label="院系号" align="center" prop="deptId" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -167,13 +176,28 @@
           </el-date-picker>
         </el-form-item>
         <el-form-item label="职称" prop="professionalRanks">
-          <el-input v-model="form.professionalRanks" placeholder="请输入职称" />
+          <el-select v-model="form.professionalRanks" placeholder="请选择职称">
+            <el-option label="助教" value="助教" />
+            <el-option label="讲师" value="讲师" />
+            <el-option label="副教授" value="副教授" />
+            <el-option label="教授" value="教授" />
+          </el-select>
         </el-form-item>
         <el-form-item label="基本工资" prop="salary">
           <el-input v-model="form.salary" placeholder="请输入基本工资" />
         </el-form-item>
         <el-form-item label="院系号" prop="deptId">
-          <el-input v-model="form.deptId" placeholder="请输入院系号" />
+          <el-input v-model="form.deptId" placeholder="请输入院系号" @input="onDeptIdInput" />
+        </el-form-item>
+        <el-form-item label="所属学院" prop="deptName">
+          <el-select v-model="form.deptName" filterable placeholder="请选择学院" @change="onDeptNameChange">
+            <el-option 
+              v-for="dept in deptList" 
+              :key="dept.deptId" 
+              :label="dept.deptName" 
+              :value="dept.deptName" 
+            />
+          </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -186,6 +210,7 @@
 
 <script>
 import { listTeacher, getTeacher, delTeacher, addTeacher, updateTeacher } from "@/api/school/teacher"
+import { listDepartment } from "@/api/school/department"
 
 export default {
   name: "Teacher",
@@ -205,6 +230,8 @@ export default {
       total: 0,
       // 教师表格数据
       teacherList: [],
+      // 学院列表
+      deptList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -235,8 +262,34 @@ export default {
   },
   created() {
     this.getList()
+    this.getDeptList()
   },
   methods: {
+    /** 查询学院列表 */
+    getDeptList() {
+      listDepartment({ pageNum: 1, pageSize: 100 }).then(response => {
+        this.deptList = response.rows || []
+      })
+    },
+    /** 院系号输入时联动学院名称 */
+    onDeptIdInput(val) {
+      const dept = this.deptList.find(d => d.deptId === val)
+      if (dept) {
+        this.form.deptName = dept.deptName
+      }
+    },
+    /** 学院名称选择时联动院系号 */
+    onDeptNameChange(val) {
+      const dept = this.deptList.find(d => d.deptName === val)
+      if (dept) {
+        this.form.deptId = dept.deptId
+      }
+    },
+    /** 根据院系号获取学院名称（用于表格显示） */
+    getDeptName(deptId) {
+      const dept = this.deptList.find(d => d.deptId === deptId)
+      return dept ? dept.deptName : ''
+    },
     /** 查询教师列表 */
     getList() {
       this.loading = true
@@ -260,7 +313,8 @@ export default {
         dateOfBirth: null,
         professionalRanks: null,
         salary: null,
-        deptId: null
+        deptId: null,
+        deptName: null
       }
       this.resetForm("form")
     },
@@ -292,6 +346,13 @@ export default {
       const staffId = row.staffId || this.ids
       getTeacher(staffId).then(response => {
         this.form = response.data
+        // 根据院系号自动匹配学院名称
+        if (this.form.deptId) {
+          const dept = this.deptList.find(d => d.deptId === this.form.deptId)
+          if (dept) {
+            this.form.deptName = dept.deptName
+          }
+        }
         this.open = true
         this.title = "修改教师"
       })

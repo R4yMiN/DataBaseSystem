@@ -52,5 +52,10 @@ public interface StuSelectionMapper
                                         @Param("weekEnd") Integer weekEnd,
                                         @Param("weekType") Integer weekType);
 
+    /**
+     * 根据课程ID查询所有选课学生（成绩录入使用）
+     */
+    public List<StuSelection> selectStudentsByClassId(@Param("classId") Long classId);
+
 
 }

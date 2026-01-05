@@ -118,7 +118,7 @@ export default {
       this.getList()
     },
     handleExport() {
-      this.download('system/schedule/export', { ...this.queryParams }, `student_schedule_${new Date().getTime()}.xlsx`)
+      this.download('system/schedule/export', { ...this.queryParams }, `student_schedule_${new Date().getTime()}.pdf`)
     },
     buildGrid() {
       const emptyGrid = Array.from({ length: 12 }, () => Array.from({ length: 7 }, () => []))

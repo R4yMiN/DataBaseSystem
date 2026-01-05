@@ -63,4 +63,12 @@ public interface IStuSelectionService
      * @return 结果
      */
     public int deleteStuSelectionBySelectionId(Long selectionId);
+
+    /**
+     * 根据课程ID查询所有选课学生（成绩录入使用）
+     * 
+     * @param classId 课程ID
+     * @return 选课记录列表
+     */
+    public List<StuSelection> selectStudentsByClassId(Long classId);
 }

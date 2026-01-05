@@ -34,6 +34,9 @@
             <div style="font-size: 12px; color: #999;">课号：{{ scope.row.courseId }}</div>
           </template>
         </el-table-column>
+        <el-table-column label="教师" align="center" width="120">
+          <template slot-scope="scope">{{ scope.row.staffName || '—' }}</template>
+        </el-table-column>
         <el-table-column label="班级/性质" align="center" width="100">
           <template slot-scope="scope">
             <el-tag v-if="scope.row.isPrimary === 0" type="info" size="mini">追加时段</el-tag>
@@ -117,8 +120,8 @@
           </el-col>
           <el-col :span="16">
             <el-form-item label="节次范围">
-              <el-input-number v-model="form.lessonStart" :min="1" :max="12" /> -
-              <el-input-number v-model="form.lessonEnd" :min="1" :max="12" /> 节
+              <el-input-number v-model="form.lessonStart" :min="1" :max="12" @change="onLessonStartChange" /> -
+              <el-input-number v-model="form.lessonEnd" :min="form.lessonStart || 1" :max="12" /> 节
             </el-form-item>
           </el-col>
         </el-row>
@@ -131,7 +134,9 @@
             placeholder="请输入学生容量" />
         </el-form-item>
         <el-form-item label="地点" prop="classroomId">
-          <el-input v-model="form.classroomId" />
+          <el-select v-model="form.classroomId" filterable placeholder="请选择教室" style="width:100%">
+            <el-option v-for="room in classroomOptions" :key="room.classroomId" :label="room.roomName" :value="room.roomName" />
+          </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer">
@@ -144,7 +149,7 @@
 
 <script>
 import request from '@/utils/request'
-import { listClass, getClass, delClass, addClass, updateClass } from "@/api/school/class"
+import { listClass, getClass, delClass, addClass, updateClass, listClassroom } from "@/api/school/class"
 
 export default {
   name: "Class",
@@ -155,6 +160,7 @@ export default {
       viewType: 'list',
       isAdmin: this.$store.getters.roles.includes('admin') || this.$store.getters.roles.includes('dean'),
       courseOptions: [],
+      classroomOptions: [],
       dictDayOptions: [{label:'周一',value:1},{label:'周二',value:2},{label:'周三',value:3},{label:'周四',value:4},{label:'周五',value:5},{label:'周六',value:6},{label:'周日',value:7}],
       total: 0,
       classList: [],
@@ -197,9 +203,11 @@ export default {
       );
     },
     getCourseLibrary() { return request({ url: '/school/class/courseList', method: 'get' }).then(res => { this.courseOptions = res.data; }); },
+    getClassroomList() { return listClassroom().then(res => { this.classroomOptions = res.data; }); },
     async handleAdd() {
       this.reset();
       await this.getCourseLibrary();
+      await this.getClassroomList();
       this.form.isPrimary = 1;
       this.open = true;
       this.title = "老师申请开课";
@@ -207,11 +215,13 @@ export default {
     handleUpdate(row) {
       this.reset();
       this.getCourseLibrary();
+      this.getClassroomList();
       getClass(row.classId).then(res => { this.form = res.data; this.open = true; this.title = "教务排课"; });
     },
     handleAppendTime(row) {
       this.reset();
       this.getCourseLibrary();
+      this.getClassroomList();
       this.form = { ...row, classId: null, isPrimary: 0, dayOfWeek: null, lessonStart: 1, lessonEnd: 2, classroomId: null };
       this.open = true;
       this.title = "追加时段";
@@ -226,6 +236,12 @@ export default {
     },
     cancel() { this.open = false; },
     reset() { this.form = { classId: null, isPrimary: 1, semester: '2025秋', lessonStart: 1, lessonEnd: 2 }; },
+    onLessonStartChange(val) {
+      // 当开始节次变化时，如果结束节次小于开始节次，自动调整结束节次
+      if (this.form.lessonEnd < val) {
+        this.form.lessonEnd = val;
+      }
+    },
     handleDelete(row) {
       this.$modal.confirm('确认删除？如果是主课，关联追加时段也会被删除。').then(() => {
         return delClass(row.classId);

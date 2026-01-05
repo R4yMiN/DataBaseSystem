@@ -62,4 +62,23 @@ public class StuSelectionController extends BaseController {
     public AjaxResult remove(@PathVariable Long[] selectionIds) {
         return toAjax(stuSelectionService.deleteStuSelectionBySelectionIds(selectionIds));
     }
+
+    /**
+     * 查询选了某门课的所有学生（供成绩录入使用）
+     */
+    @PreAuthorize("@ss.hasAnyRoles('admin,dean,teacher')")
+    @GetMapping("/students")
+    public TableDataInfo getStudentsByClass(@RequestParam("classId") Long classId) {
+        List<StuSelection> list = stuSelectionService.selectStudentsByClassId(classId);
+        return getDataTable(list);
+    }
+
+    /**
+     * 修改选课记录（成绩录入）
+     */
+    @PreAuthorize("@ss.hasAnyRoles('admin,dean,teacher')")
+    @PutMapping
+    public AjaxResult edit(@RequestBody StuSelection stuSelection) {
+        return toAjax(stuSelectionService.updateStuSelection(stuSelection));
+    }
 }

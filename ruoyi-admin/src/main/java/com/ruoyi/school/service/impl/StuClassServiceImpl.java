@@ -142,4 +142,9 @@ public class StuClassServiceImpl implements IStuClassService
     public List<Map<String, Object>> selectAllCourseOptions() {
         return stuClassMapper.selectAllCourseOptions();
     }
+
+    @Override
+    public List<Map<String, Object>> selectAllClassroomOptions() {
+        return stuClassMapper.selectAllClassroomOptions();
+    }
 }

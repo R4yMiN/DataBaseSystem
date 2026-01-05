@@ -42,3 +42,20 @@ export function delSelection(id) {
   })
 }
 
+// 选课操作（新增选课记录）
+export function addSelection(data) {
+  return request({
+    url: '/school/selection',
+    method: 'post',
+    data: data
+  })
+}
+
+// 修改选课记录（成绩录入）
+export function updateSelection(data) {
+  return request({
+    url: '/school/selection',
+    method: 'put',
+    data: data
+  })
+}

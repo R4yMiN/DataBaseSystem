@@ -26,4 +26,7 @@ public interface IStuClassService
 
     /** 获取正式课程库列表，供老师点选 */
     public List<Map<String, Object>> selectAllCourseOptions();
+
+    /** 获取教室列表，供排课时选择 */
+    public List<Map<String, Object>> selectAllClassroomOptions();
 }
