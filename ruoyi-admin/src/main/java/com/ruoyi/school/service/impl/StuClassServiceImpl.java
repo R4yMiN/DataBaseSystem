@@ -56,13 +56,18 @@ public class StuClassServiceImpl implements IStuClassService
         if (stuClassMapper.existsDuplicateStuClass(stuClass) > 0) {
             throw new ServiceException("开课失败：已存在相同的开课记录");
         }
+        // 自动生成唯一的 classSection（班级号）
+        // 规则：同一【课程 + 学期】下，主课班级号全局唯一（不区分教师）；追加时段继承主课班级号。
         if (stuClass.getIsPrimary() != null && stuClass.getIsPrimary() == 1) {
-            StuClass countQuery = new StuClass();
-            countQuery.setCourseId(stuClass.getCourseId());
-            countQuery.setSemester(stuClass.getSemester());
-            countQuery.setIsPrimary(1);
-            int count = stuClassMapper.selectStuClassList(countQuery).size();
-            stuClass.setClassSection(String.format("%02d班", count + 1));
+            Integer maxNo = stuClassMapper.selectMaxPrimaryClassSectionNo(stuClass.getCourseId(), stuClass.getSemester());
+            int nextNo = (maxNo == null ? 0 : maxNo) + 1;
+            String candidate = String.format("%02d班", nextNo);
+            // 避免历史数据/并发导致的冲突：若已存在则递增直到可用
+            while (stuClassMapper.existsPrimaryClassSection(stuClass.getCourseId(), stuClass.getSemester(), candidate, null) > 0) {
+                nextNo++;
+                candidate = String.format("%02d班", nextNo);
+            }
+            stuClass.setClassSection(candidate);
         }
         if (stuClassMapper.checkSchedulingConflict(stuClass) > 0) {
             throw new ServiceException("排课失败：该时段内已有课程安排！");

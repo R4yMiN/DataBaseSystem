@@ -2,7 +2,9 @@ package com.ruoyi.school.mapper;
 
 import java.util.List;
 import java.util.Map;
+
 import com.ruoyi.school.domain.StuClass;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 开课Mapper接口
@@ -101,4 +103,18 @@ public interface StuClassMapper
      * @return 教室Map集合
      */
     public List<Map<String, Object>> selectAllClassroomOptions();
+
+    /**
+     * 获取同一课程+学期下主课( is_primary = 1 )已使用的最大班级号数字部分。
+     * 例如：01班、02班 -> 返回 2。
+     */
+    Integer selectMaxPrimaryClassSectionNo(@Param("courseId") String courseId, @Param("semester") String semester);
+
+    /**
+     * 检查同一课程+学期下主课班级号是否已存在（用于保证班级号全局唯一）。
+     */
+    int existsPrimaryClassSection(@Param("courseId") String courseId,
+                                 @Param("semester") String semester,
+                                 @Param("classSection") String classSection,
+                                 @Param("excludeClassId") Long excludeClassId);
 }

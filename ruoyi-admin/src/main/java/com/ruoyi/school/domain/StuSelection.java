@@ -27,6 +27,7 @@ public class StuSelection extends BaseEntity {
     private String semester;     // 学期 (对应数据库 semester)
     private String staffId;      // 教工号 (对应数据库 staff_id)
     private String studentName;  // 学生姓名 (成绩录入时显示)
+    private Long credit;         // 学分 (来自 stu_course 表)
 
 
     // --- 必须有 Getter 和 Setter ---
@@ -68,6 +69,6 @@ public class StuSelection extends BaseEntity {
     public void setClassSection(String classSection) { this.classSection = classSection; }
     public String getStudentName() { return studentName; }
     public void setStudentName(String studentName) { this.studentName = studentName; }
-
-
+    public Long getCredit() { return credit; }
+    public void setCredit(Long credit) { this.credit = credit; }
 }

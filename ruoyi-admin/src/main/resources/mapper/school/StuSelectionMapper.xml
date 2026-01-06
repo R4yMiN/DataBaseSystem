@@ -17,6 +17,7 @@
         <result property="capacity"    column="capacity" />
         <result property="selectedNum" column="selected_num" />
         <result property="isSelected"  column="is_selected" />
+        <result property="credit"      column="credit" />
     </resultMap>
 
     <!-- 查找超额的学生ID -->
@@ -35,23 +36,36 @@
         SELECT
             MIN(s.selection_id) as selection_id,
             s.student_id,
-            c.course_id,
-            c.staff_id,
-            c.semester,
-            c.class_section,
+            p.course_id,
+            p.staff_id,
+            p.semester,
+            p.class_section,
             MAX(co.course_name) as course_name,
+            MAX(co.credit) as credit,
             MAX(u.nick_name) as teacher_name,
-            GROUP_CONCAT(DISTINCT CONCAT('周', c.day_of_week, ' 第', c.lesson_start, '-', c.lesson_end, '节') ORDER BY c.day_of_week SEPARATOR ' | ') as class_time,
-            GROUP_CONCAT(DISTINCT c.classroom_id SEPARATOR ' / ') as classroom_id,
-            MAX(c.capacity) as capacity,
-            MAX(c.selected_num) as selected_num,
+            GROUP_CONCAT(
+                DISTINCT CONCAT(
+                    '周', sc.day_of_week,
+                    ' 第', sc.lesson_start, '-', sc.lesson_end, '节 (',
+                    IFNULL(COALESCE(sc.classroom_id, p.classroom_id), '待定'),
+                    ')'
+                )
+                ORDER BY sc.day_of_week
+                SEPARATOR ' | '
+            ) as class_time,
+            GROUP_CONCAT(DISTINCT COALESCE(sc.classroom_id, p.classroom_id) SEPARATOR ' / ') as classroom_id,
+            MAX(p.capacity) as capacity,
+            MAX(p.selected_num) as selected_num,
             1 as is_selected
         FROM stu_selection s
-                 INNER JOIN stu_class c ON s.class_id = c.class_id
-                 INNER JOIN stu_course co ON c.course_id = co.course_id
-                 LEFT JOIN sys_user u ON c.staff_id = u.user_name
+                 INNER JOIN stu_class p ON s.class_id = p.class_id AND p.is_primary = 1
+                 INNER JOIN stu_class sc ON sc.course_id = p.course_id
+                   AND sc.semester = p.semester
+                   AND sc.class_section = p.class_section
+                 INNER JOIN stu_course co ON p.course_id = co.course_id
+                 LEFT JOIN sys_user u ON p.staff_id = u.user_name
         WHERE s.student_id = #{studentId}
-        GROUP BY s.student_id, c.course_id, c.staff_id, c.class_section, c.semester
+        GROUP BY s.student_id, p.course_id, p.staff_id, p.class_section, p.semester
     </select>
 
     <select id="selectStuSelectionList" parameterType="StuSelection" resultMap="StuSelectionResult">
@@ -65,11 +79,20 @@
         c.capacity,
         c.selected_num,
         co.course_name,
+        co.credit,
         u.nick_name as teacher_name,
-        (SELECT GROUP_CONCAT(CONCAT('周', sc.day_of_week, ' 第', sc.lesson_start, '-', sc.lesson_end, '节') SEPARATOR ' | ')
-        FROM stu_class sc
-        WHERE sc.course_id = c.course_id AND sc.class_section = c.class_section
-        AND sc.semester = c.semester AND sc.staff_id = c.staff_id
+        (
+            SELECT GROUP_CONCAT(
+                CONCAT(
+                    '周', sc.day_of_week,
+                    ' 第', sc.lesson_start, '-', sc.lesson_end,
+                    '节 (', IFNULL(COALESCE(sc.classroom_id, c.classroom_id), '待定'), ')'
+                )
+                SEPARATOR ' | '
+            )
+            FROM stu_class sc
+            WHERE sc.course_id = c.course_id AND sc.class_section = c.class_section
+              AND sc.semester = c.semester
         ) as class_time,
         (CASE WHEN s.selection_id IS NOT NULL THEN 1 ELSE 0 END) as is_selected,
         s.selection_id
@@ -81,6 +104,7 @@
             c.is_primary = 1
             <if test="courseName != null and courseName != ''"> AND co.course_name LIKE concat('%', #{courseName}, '%')</if>
             <if test="teacherName != null and teacherName != ''"> AND u.nick_name LIKE concat('%', #{teacherName}, '%')</if>
+            <if test="semester != null and semester != ''"> AND c.semester LIKE concat('%', #{semester}, '%')</if>
         </where>
         ORDER BY c.class_id DESC
     </select>
@@ -96,6 +120,13 @@
     <delete id="deleteStuSelectionBySelectionIds" parameterType="Long">
         delete from stu_selection where selection_id in
         <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <delete id="deleteStuSelectionByStudentAndClassIds">
+        delete from stu_selection
+        where student_id = #{studentId}
+          and class_id in
+        <foreach item="id" collection="classIds" open="(" separator="," close=")">#{id}</foreach>
     </delete>
 
     <delete id="deleteStuSelectionBySelectionId" parameterType="Long">
@@ -132,4 +163,29 @@
         </set>
         where selection_id = #{selectionId}
     </update>
+
+    <!-- 学生查询自己的成绩 -->
+    <select id="selectMyGrades" parameterType="StuSelection" resultType="StuSelection">
+        SELECT
+            s.selection_id AS selectionId,
+            s.student_id AS studentId,
+            s.class_id AS classId,
+            s.normal_score AS normalScore,
+            s.test_score AS testScore,
+            s.total_score AS totalScore,
+            c.course_id AS courseId,
+            c.semester AS semester,
+            co.course_name AS courseName,
+            co.credit AS credit,
+            u.nick_name AS teacherName
+        FROM stu_selection s
+        LEFT JOIN stu_class c ON s.class_id = c.class_id
+        LEFT JOIN stu_course co ON c.course_id = co.course_id
+        LEFT JOIN sys_user u ON c.staff_id = u.user_name
+        <where>
+            s.student_id = #{studentId}
+            <if test="semester != null and semester != ''"> AND c.semester = #{semester}</if>
+        </where>
+        ORDER BY c.semester DESC, co.course_name
+    </select>
 </mapper>

@@ -71,4 +71,12 @@ public interface IStuSelectionService
      * @return 选课记录列表
      */
     public List<StuSelection> selectStudentsByClassId(Long classId);
+
+    /**
+     * 查询学生自己的成绩
+     * 
+     * @param stuSelection 查询条件（包含studentId和semester）
+     * @return 成绩列表
+     */
+    public List<StuSelection> selectMyGrades(StuSelection stuSelection);
 }

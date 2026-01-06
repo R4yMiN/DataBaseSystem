@@ -34,14 +34,17 @@
           <template slot-scope="scope">
             <div style="font-weight: bold;">{{ scope.row.courseName }}</div>
             <div style="font-size: 12px; color: #999;">课号：{{ scope.row.courseId }}</div>
+            <div style="font-size: 12px; color: #409eff;">学分：{{ scope.row.credit || '—' }}</div>
           </template>
         </el-table-column>
         <el-table-column label="教师" align="center" width="120">
           <template slot-scope="scope">{{ scope.row.staffName || '—' }}</template>
         </el-table-column>
-        <el-table-column label="班级/性质" align="center" width="100">
+        <el-table-column label="班级/性质" align="center" width="120">
           <template slot-scope="scope">
-            <el-tag v-if="scope.row.isPrimary === 0" type="info" size="mini">追加时段</el-tag>
+            <span v-if="scope.row.isPrimary === 0" style="color: #909399;">
+              {{ scope.row.classSection }} <el-tag type="info" size="mini">追加时段</el-tag>
+            </span>
             <span v-else>{{ scope.row.classSection }}</span>
           </template>
         </el-table-column>
@@ -54,7 +57,10 @@
         <el-table-column label="地点" align="center" prop="classroomId" />
         <el-table-column label="已选/容量" align="center" width="100">
           <template slot-scope="scope">
-            <el-tag :type="scope.row.selectedNum >= scope.row.capacity ? 'danger' : 'success'">
+            <el-tag
+              v-if="scope.row.isPrimary !== 0"
+              :type="scope.row.selectedNum >= scope.row.capacity ? 'danger' : 'success'"
+            >
               {{ scope.row.selectedNum }} / {{ scope.row.capacity }}
             </el-tag>
           </template>
@@ -97,14 +103,17 @@
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-divider content-position="left">基础信息</el-divider>
         <el-form-item label="课程选择" prop="courseId">
-          <el-select v-model="form.courseId" :disabled="form.isPrimary === 0" style="width:100%">
+          <el-select v-model="form.courseId" :disabled="form.isPrimary === 0" style="width:100%" @change="onCourseChange">
             <el-option v-for="opt in courseOptions" :key="opt.courseId" :label="opt.courseName" :value="opt.courseId" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="课程学分">
+          <el-input :value="selectedCourseCredit" disabled placeholder="选择课程后自动显示" style="width:100%" />
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="班级号" prop="classSection">
-              <el-input v-model="form.classSection" :disabled="form.isPrimary === 0" />
+              <el-input v-model="form.classSection" disabled placeholder="系统自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -160,6 +169,7 @@ export default {
       isAdmin: this.$store.getters.roles.includes('admin') || this.$store.getters.roles.includes('dean'),
       courseOptions: [],
       classroomOptions: [],
+      selectedCourseCredit: '',
       dictDayOptions: [{label:'周一',value:1},{label:'周二',value:2},{label:'周三',value:3},{label:'周四',value:4},{label:'周五',value:5},{label:'周六',value:6},{label:'周日',value:7}],
       total: 0,
       classList: [],
@@ -209,8 +219,13 @@ export default {
       await this.getCourseLibrary();
       await this.getClassroomList();
       this.form.isPrimary = 1;
+      this.selectedCourseCredit = '';
       this.open = true;
       this.title = "老师申请开课";
+    },
+    onCourseChange(courseId) {
+      const course = this.courseOptions.find(c => c.courseId === courseId);
+      this.selectedCourseCredit = course ? (course.credit + ' 学分') : '';
     },
     handleUpdate(row) {
       this.reset();

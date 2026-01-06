@@ -17,6 +17,12 @@
       <el-col :span="1.5">
         <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:schedule:export']">导出</el-button>
       </el-col>
+      <el-col :span="1.5" v-if="totalCredits > 0">
+        <div class="total-credits-box">
+          <span class="credits-label">总学分：</span>
+          <span class="credits-value">{{ totalCredits }}</span>
+        </div>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -79,6 +85,11 @@ export default {
       }
     }
   },
+  computed: {
+    totalCredits() {
+      return this.scheduleList.reduce((sum, item) => sum + (Number(item.credit) || 0), 0)
+    }
+  },
   created() {
     const studentId = this.$store?.state?.user?.userName
     if (studentId) {
@@ -118,7 +129,7 @@ export default {
       this.getList()
     },
     handleExport() {
-      this.download('system/schedule/export', { ...this.queryParams }, `student_schedule_${new Date().getTime()}.pdf`)
+      this.download('system/schedule/export', { ...this.queryParams, totalCredits: this.totalCredits }, `student_schedule_${new Date().getTime()}.pdf`)
     },
     buildGrid() {
       const emptyGrid = Array.from({ length: 12 }, () => Array.from({ length: 7 }, () => []))
@@ -133,7 +144,7 @@ export default {
           const card = {
             courseName: item.courseName || item.courseId,
             teacherName: item.teacherName,
-            classPlace: item.classroomId || item.classPlace,
+            classPlace: s.classroom || item.classroomId || item.classPlace || '待定',
             time: `第${s.start}-${s.end}节`
           }
           for (let p = s.start; p <= s.end && p <= 12; p++) {
@@ -154,8 +165,8 @@ export default {
       // 支持中文数字（周一、周二）和阿拉伯数字（周1、周2）
       const dayMapCN = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 7, '天': 7 }
       const slots = []
-      // 正则同时匹配 "周一" 或 "周1" 或 "周日"
-      const regex = /周([一二三四五六日天]|\d)[^\d]*?(\d+)(?:[-~至到—](\d+))?/;
+      // 正则匹配 "周1 第1-2节 (教室)" 格式
+      const regex = /周([一二三四五六日天]|\d)[^\d]*?(\d+)(?:[-~至到—](\d+))?[节]?\s*(?:\(([^)]*)\))?/;
       parts.forEach(p => {
         const m = p.match(regex)
         if (m) {
@@ -167,8 +178,9 @@ export default {
           }
           const start = Number(m[2]) || 1
           const end = Number(m[3] || m[2]) || start
+          const classroom = m[4] || null  // 提取括号内的教室信息
           if (day >= 1 && day <= 7) {
-            slots.push({ day, start, end })
+            slots.push({ day, start, end, classroom })
           }
         }
       })
@@ -264,5 +276,22 @@ export default {
 .pending-title {
   font-weight: 600;
   margin-bottom: 8px;
+}
+.total-credits-box {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+  color: #fff;
+}
+.credits-label {
+  font-size: 13px;
+}
+.credits-value {
+  font-size: 16px;
+  font-weight: bold;
+  margin-left: 4px;
 }
 </style>

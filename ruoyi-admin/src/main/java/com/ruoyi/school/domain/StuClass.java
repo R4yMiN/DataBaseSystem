@@ -31,6 +31,7 @@ public class StuClass extends BaseEntity {
     // 扩展显示字段
     private String courseName;
     private String staffName;
+    private Long credit;  // 课程学分
 
     // --- Getter 和 Setter (必须全部包含) ---
     public Long getClassId() { return classId; }
@@ -69,4 +70,6 @@ public class StuClass extends BaseEntity {
     public void setCourseName(String courseName) { this.courseName = courseName; }
     public String getStaffName() { return staffName; }
     public void setStaffName(String staffName) { this.staffName = staffName; }
+    public Long getCredit() { return credit; }
+    public void setCredit(Long credit) { this.credit = credit; }
 }

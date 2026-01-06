@@ -17,18 +17,20 @@
         <result property="isPrimary"     column="is_primary"  />
         <result property="courseName"    column="course_name" />
         <result property="staffName"     column="staff_name"  />
+        <result property="credit"        column="credit"      />
     </resultMap>
 
     <select id="selectStuClassList" parameterType="StuClass" resultMap="StuClassResult">
-        select * from vw_class_full_info
+        select v.*, c.credit from vw_class_full_info v
+        left join stu_course c on v.course_id = c.course_id
         <where>
-            <if test="courseId != null  and courseId != ''"> and course_id = #{courseId}</if>
-            <if test="staffId != null  and staffId != ''"> and staff_id = #{staffId}</if>
-            <if test="semester != null  and semester != ''"> and semester = #{semester}</if>
-            <if test="classSection != null  and classSection != ''"> and class_section = #{classSection}</if>
-            <if test="isPrimary != null"> and is_primary = #{isPrimary}</if>
+            <if test="courseId != null  and courseId != ''"> and v.course_id = #{courseId}</if>
+            <if test="staffId != null  and staffId != ''"> and v.staff_id = #{staffId}</if>
+            <if test="semester != null  and semester != ''"> and v.semester = #{semester}</if>
+            <if test="classSection != null  and classSection != ''"> and v.class_section = #{classSection}</if>
+            <if test="isPrimary != null"> and v.is_primary = #{isPrimary}</if>
         </where>
-        order by class_id desc
+        order by v.class_id desc
     </select>
 
     <!-- 核心：随机踢人SQL。原理：按班级分组随机排序，序号超过容量的学生被删除 -->
@@ -64,11 +66,35 @@
     </select>
 
     <select id="selectAllCourseOptions" resultType="map">
-        select course_id as courseId, course_name as courseName from stu_course
+        select course_id as courseId, course_name as courseName, credit from stu_course
     </select>
 
     <select id="selectAllClassroomOptions" resultType="map">
         select classroom_id as classroomId, room_name as roomName from stu_classroom order by LENGTH(room_name), room_name
+    </select>
+
+    <!-- 同一课程+学期下，主课已使用的最大班级号数字部分（仅统计类似 01班/2班/10班 这种格式） -->
+    <select id="selectMaxPrimaryClassSectionNo" resultType="int">
+        SELECT IFNULL(
+            MAX(CAST(REPLACE(class_section, '班', '') AS UNSIGNED)),
+            0
+        )
+        FROM stu_class
+        WHERE course_id = #{courseId}
+          AND semester = #{semester}
+          AND is_primary = 1
+          AND class_section REGEXP '^[0-9]+班$'
+    </select>
+
+    <!-- 检查同一课程+学期下的主课班级号是否已存在（用于保证全局唯一） -->
+    <select id="existsPrimaryClassSection" resultType="int">
+        SELECT COUNT(1)
+        FROM stu_class
+        WHERE course_id = #{courseId}
+          AND semester = #{semester}
+          AND is_primary = 1
+          AND class_section = #{classSection}
+          <if test="excludeClassId != null"> AND class_id != #{excludeClassId} </if>
     </select>
 
     <select id="selectStuClassByClassId" parameterType="Long" resultMap="StuClassResult">

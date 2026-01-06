@@ -81,4 +81,16 @@ public class StuSelectionController extends BaseController {
     public AjaxResult edit(@RequestBody StuSelection stuSelection) {
         return toAjax(stuSelectionService.updateStuSelection(stuSelection));
     }
+
+    /**
+     * 学生查询自己的成绩
+     */
+    @GetMapping("/myGrades")
+    public TableDataInfo myGrades(StuSelection stuSelection) {
+        String studentId = SecurityUtils.getUsername();
+        stuSelection.setStudentId(studentId);
+        startPage();
+        List<StuSelection> list = stuSelectionService.selectMyGrades(stuSelection);
+        return getDataTable(list);
+    }
 }

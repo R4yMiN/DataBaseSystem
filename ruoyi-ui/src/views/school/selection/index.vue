@@ -8,15 +8,20 @@
           <i class="el-icon-date"></i> 我的已选课程
         </div>
         <el-table v-loading="loadingSchedule" :data="mySchedule" size="small" border>
-          <el-table-column label="课程代码" align="center" prop="courseId" width="100" />
           <el-table-column label="课程名称" align="center" prop="courseName" />
-          <el-table-column label="教师" align="center" width="120">
+          <el-table-column label="课程ID/课号" align="center" prop="courseId" width="100" />
+          <el-table-column label="学分" align="center" prop="credit" width="80">
+            <template slot-scope="scope">
+              <el-tag size="mini" type="primary">{{ scope.row.credit || 0 }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="教师" align="center" width="100">
             <template slot-scope="scope">
               <span>{{ scope.row.teacherName }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="学期" align="center" prop="semester" width="120" />
-          <el-table-column label="班级/课序" align="center" prop="classSection" width="100" />
+          <el-table-column label="班级ID" align="center" prop="classSection" width="80" />
+          <el-table-column label="学期" align="center" prop="semester" width="100" />
           <el-table-column label="上课时间" align="center" min-width="180">
             <template slot-scope="scope">
               <div v-for="time in (scope.row.classTime || '').split('|')" :key="time">
@@ -41,6 +46,9 @@
         <el-form-item label="教师姓名" prop="teacherName">
           <el-input v-model="queryParams.teacherName" placeholder="请输入教师姓名" clearable @keyup.enter.native="handleQuery" />
         </el-form-item>
+        <el-form-item label="学期" prop="semester">
+          <el-input v-model="queryParams.semester" placeholder="请输入学期" clearable @keyup.enter.native="handleQuery" />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
           <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -50,8 +58,14 @@
       <!-- 3. 数据表格：选课大厅 -->
       <el-table v-loading="loading" :data="selectionList" border>
         <el-table-column label="课程名称" align="center" prop="courseName" />
+        <el-table-column label="课程ID/课号" align="center" prop="courseId" width="100" />
+        <el-table-column label="学分" align="center" prop="credit" width="80">
+          <template slot-scope="scope">
+            <el-tag size="mini" type="primary">{{ scope.row.credit || 0 }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="教师姓名" align="center" prop="teacherName" width="100" />
-        <el-table-column label="班级/课序" align="center" prop="classSection" width="100" />
+        <el-table-column label="班级ID" align="center" prop="classSection" width="80" />
         <el-table-column label="学期" align="center" prop="semester" width="100" />
         <el-table-column label="上课时间" align="center" min-width="200">
           <template slot-scope="scope">
@@ -224,7 +238,8 @@ export default {
         pageNum: 1,
         pageSize: 10,
         courseName: undefined,
-        teacherName: undefined
+        teacherName: undefined,
+        semester: undefined
       },
       // 管理员成绩录入相关
       courseList: [],

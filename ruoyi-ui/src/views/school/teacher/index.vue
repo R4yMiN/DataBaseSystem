@@ -154,7 +154,7 @@
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="教职工号" prop = "staffId">
           <el-input v-model="form.staffId"
-            placeholder="请输入编号":disabled="title.indexOf('修改')!==-1"/>
+            placeholder="请输入编号" :disabled="title.indexOf('修改')!==-1"/>
 
         </el-form-item>
         <el-form-item label="姓名" prop="name">

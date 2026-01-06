@@ -62,6 +62,10 @@ public class VwStudentSchedule extends BaseEntity
     @Excel(name = "是否被当前学生选中", readConverterExp = "0=-未选,1=-已选")
     private Long isSelected;
 
+    /** 学分 */
+    @Excel(name = "学分")
+    private Long credit;
+
     public void setId(Long id) 
     {
         this.id = id;
@@ -180,6 +184,16 @@ public class VwStudentSchedule extends BaseEntity
     public Long getIsSelected() 
     {
         return isSelected;
+    }
+
+    public void setCredit(Long credit) 
+    {
+        this.credit = credit;
+    }
+
+    public Long getCredit() 
+    {
+        return credit;
     }
 
     @Override

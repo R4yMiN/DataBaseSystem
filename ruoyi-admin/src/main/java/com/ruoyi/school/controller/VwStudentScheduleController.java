@@ -31,7 +31,10 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.school.domain.StuSelection;
 import com.ruoyi.school.domain.VwStudentSchedule;
+import com.ruoyi.school.service.IStuSelectionService;
 import com.ruoyi.school.service.IVwStudentScheduleService;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -47,6 +50,9 @@ public class VwStudentScheduleController extends BaseController
 {
     @Autowired
     private IVwStudentScheduleService vwStudentScheduleService;
+
+    @Autowired
+    private IStuSelectionService stuSelectionService;
 
     /**
      * 查询VIEW列表
@@ -68,11 +74,36 @@ public class VwStudentScheduleController extends BaseController
     @PostMapping("/export")
     public void export(HttpServletResponse response, VwStudentSchedule vwStudentSchedule) throws IOException
     {
-        List<VwStudentSchedule> list = vwStudentScheduleService.selectVwStudentScheduleList(vwStudentSchedule);
+        // 使用与前端课表相同的数据源，包含主课+追加时段
+        String studentId = SecurityUtils.getLoginUser().getUser().getUserName();
+        List<StuSelection> scheduleList = stuSelectionService.selectMySchedule(studentId);
+        
+        // 转换为 VwStudentSchedule 以复用现有 PDF 生成逻辑
+        List<VwStudentSchedule> list = new ArrayList<>();
+        for (StuSelection sel : scheduleList) {
+            VwStudentSchedule vs = new VwStudentSchedule();
+            vs.setStudentId(sel.getStudentId());
+            vs.setCourseId(sel.getCourseId());
+            vs.setCourseName(sel.getCourseName());
+            vs.setTeacherName(sel.getTeacherName());
+            vs.setSemester(sel.getSemester());
+            vs.setClassTime(sel.getClassTime());
+            vs.setClassPlace(sel.getClassroomId());
+            vs.setCredit(sel.getCredit());
+            list.add(vs);
+        }
+        
+        // 计算总学分
+        int totalCredits = 0;
+        for (VwStudentSchedule item : list) {
+            if (item.getCredit() != null) {
+                totalCredits += item.getCredit();
+            }
+        }
 
         PDDocument doc = new PDDocument();
         FontPair fonts = loadFonts(doc);
-        buildTimetablePdf(doc, list, fonts);
+        buildTimetablePdf(doc, list, fonts, totalCredits);
         buildPendingPdf(doc, list, fonts);
 
         String fileName = "student_schedule_" + DateUtils.dateTimeNow() + ".pdf";
@@ -83,7 +114,7 @@ public class VwStudentScheduleController extends BaseController
     }
 
     /** 将导出格式改成与前端课表视图一致的网格布局 (PDF) - 合并单元格版 */
-    private void buildTimetablePdf(PDDocument doc, List<VwStudentSchedule> list, FontPair fonts) throws IOException {
+    private void buildTimetablePdf(PDDocument doc, List<VwStudentSchedule> list, FontPair fonts, int totalCredits) throws IOException {
         PDPage page = new PDPage(PDRectangle.A4);
         doc.addPage(page);
 
@@ -138,7 +169,7 @@ public class VwStudentScheduleController extends BaseController
             cs.beginText();
             cs.setFont(fonts.regular, 11);
             cs.newLineAtOffset(margin, pageHeight - margin - 52);
-            cs.showText("姓名: " + studentName + "    学号: " + studentId + "    学期: " + semester);
+            cs.showText("姓名: " + studentName + "    学号: " + studentId + "    学期: " + semester + "    总学分: " + totalCredits);
             cs.endText();
 
             // 分隔线

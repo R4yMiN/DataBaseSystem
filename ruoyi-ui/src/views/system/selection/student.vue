@@ -7,16 +7,36 @@
 </div>
 <el-table v-loading="loadingSchedule" :data="mySchedule" size="small" border>
 <el-table-column label="课程名称" align="center" prop="courseName" />
+<el-table-column label="课程ID/课号" align="center" prop="courseId" width="100" />
+<el-table-column label="学分" align="center" prop="credit" width="70">
+<template slot-scope="scope">
+<el-tag size="mini" type="primary">{{ scope.row.credit || 0 }}</el-tag>
+</template>
+</el-table-column>
 <el-table-column label="教师" align="center" prop="teacherName" width="100" />
+<el-table-column label="班级ID" align="center" prop="classSection" width="80" />
 <el-table-column label="学期" align="center" prop="semester" width="100" />
-<el-table-column label="上课时间" align="center" prop="classTime" width="120" />
-<el-table-column label="上课地点" align="center" prop="classroomId" width="100" />
+<el-table-column label="上课时间" align="center" width="180">
+<template slot-scope="scope">
+<div class="time-slots">
+<div v-for="(slot, idx) in parseTimeSlots(scope.row.classTime)" :key="idx" class="time-slot-item">
+<el-tag size="mini" :type="idx === 0 ? 'primary' : 'info'" effect="plain">
+{{ slot }}
+</el-tag>
+</div>
+</div>
+</template>
+</el-table-column>
 <el-table-column label="操作" align="center" width="80">
 <template slot-scope="scope">
 <el-button type="danger" size="mini" @click="handleUnselect(scope.row)">退课</el-button>
 </template>
 </el-table-column>
 </el-table>
+<div v-if="mySchedule.length > 0" style="text-align: right; margin-top: 10px; padding-right: 10px;">
+<span style="font-size: 14px; color: #606266;">已选学分合计：</span>
+<el-tag type="success" size="medium">{{ totalSelectedCredits }}</el-tag>
+</div>
 <div v-if="mySchedule.length === 0 && !loadingSchedule" style="text-align: center; color: #999; padding: 20px;">
 暂无已选课程
 </div>
@@ -55,16 +75,30 @@ clearable
 
 <el-table v-loading="loading" :data="selectionList">
 <el-table-column label="课程名称" align="center" prop="courseName" />
-<el-table-column label="课程ID/课号" align="center" prop="courseId" />
-<el-table-column label="教师姓名" align="center" prop="teacherName" />
-<el-table-column label="教师工号" align="center" prop="teacherId" />
-<el-table-column label="学期" align="center" prop="semester" />
-<el-table-column label="上课时间" align="center" prop="classTime" />
-<el-table-column label="上课地点" align="center" prop="classPlace" />
-<el-table-column label="容量" align="center" prop="capacity" />
-<el-table-column label="已选" align="center" prop="selectedNum" />
-<el-table-column label="剩余" align="center" prop="remainCapacity" />
-<el-table-column label="我的状态" align="center">
+<el-table-column label="课程ID/课号" align="center" prop="courseId" width="100" />
+<el-table-column label="学分" align="center" prop="credit" width="70">
+<template slot-scope="scope">
+<el-tag size="mini" type="primary">{{ scope.row.credit || 0 }}</el-tag>
+</template>
+</el-table-column>
+<el-table-column label="教师姓名" align="center" prop="teacherName" width="100" />
+<el-table-column label="班级ID" align="center" prop="classSection" width="80" />
+<el-table-column label="学期" align="center" prop="semester" width="100" />
+<el-table-column label="上课时间" align="center" width="180">
+<template slot-scope="scope">
+<div class="time-slots">
+<div v-for="(slot, idx) in parseTimeSlots(scope.row.classTime)" :key="idx" class="time-slot-item">
+<el-tag size="mini" :type="idx === 0 ? 'primary' : 'info'" effect="plain">
+{{ slot }}
+</el-tag>
+</div>
+</div>
+</template>
+</el-table-column>
+<el-table-column label="容量" align="center" prop="capacity" width="70" />
+<el-table-column label="已选" align="center" prop="selectedNum" width="70" />
+<el-table-column label="剩余" align="center" prop="remainCapacity" width="70" />
+<el-table-column label="我的状态" align="center" width="100">
 <template slot-scope="scope">
 <el-button
 v-if="String(scope.row.isSelected) === '1'"
@@ -113,6 +147,11 @@ courseName: undefined,
 teacherName: undefined,
 semester: undefined
 }
+}
+},
+computed: {
+totalSelectedCredits() {
+return this.mySchedule.reduce((sum, item) => sum + (Number(item.credit) || 0), 0)
 }
 },
 created() {
@@ -180,6 +219,10 @@ this.queryParams.courseName = undefined
 this.queryParams.teacherName = undefined
 this.queryParams.semester = undefined
 this.handleQuery()
+},
+parseTimeSlots(classTime) {
+if (!classTime) return []
+return classTime.split('|').map(s => s.trim()).filter(Boolean)
 }
 }
 }
@@ -188,5 +231,17 @@ this.handleQuery()
 <style scoped>
 .app-container {
 padding: 20px;
+}
+.time-slots {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 4px;
+}
+.time-slot-item {
+line-height: 1.2;
+}
+.time-slot-item .el-tag {
+white-space: nowrap;
 }
 </style>

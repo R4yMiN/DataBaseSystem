@@ -79,7 +79,36 @@ public class StuSelectionServiceImpl implements IStuSelectionService
     @Transactional
     public int deleteStuSelectionBySelectionIds(Long[] selectionIds) {
         // 数据库触发器会自动给 selected_num 减 1
-        return stuSelectionMapper.deleteStuSelectionBySelectionIds(selectionIds);
+        // 学生退课：传入的是聚合后的 selection_id（通常来自主课），这里需要把同一班级的追加时段一起退掉。
+        int total = 0;
+        if (selectionIds == null || selectionIds.length == 0) {
+            return 0;
+        }
+        for (Long selectionId : selectionIds) {
+            if (selectionId == null) continue;
+            StuSelection sel = stuSelectionMapper.selectStuSelectionBySelectionId(selectionId);
+            if (sel == null || sel.getClassId() == null || sel.getStudentId() == null) {
+                continue;
+            }
+            StuClass current = stuClassMapper.selectStuClassByClassId(sel.getClassId());
+            if (current == null) {
+                // 找不到班级信息时，兜底只删除当前 selectionId
+                total += stuSelectionMapper.deleteStuSelectionBySelectionIds(new Long[]{selectionId});
+                continue;
+            }
+            StuClass groupQuery = new StuClass();
+            groupQuery.setCourseId(current.getCourseId());
+            groupQuery.setSemester(current.getSemester());
+            groupQuery.setClassSection(current.getClassSection());
+            List<StuClass> parts = stuClassMapper.selectStuClassList(groupQuery);
+            if (parts == null || parts.isEmpty()) {
+                total += stuSelectionMapper.deleteStuSelectionBySelectionIds(new Long[]{selectionId});
+                continue;
+            }
+            Long[] classIds = parts.stream().map(StuClass::getClassId).toArray(Long[]::new);
+            total += stuSelectionMapper.deleteStuSelectionByStudentAndClassIds(sel.getStudentId(), classIds);
+        }
+        return total;
     }
 
     @Override
@@ -90,5 +119,10 @@ public class StuSelectionServiceImpl implements IStuSelectionService
     @Override
     public List<StuSelection> selectStudentsByClassId(Long classId) {
         return stuSelectionMapper.selectStudentsByClassId(classId);
+    }
+
+    @Override
+    public List<StuSelection> selectMyGrades(StuSelection stuSelection) {
+        return stuSelectionMapper.selectMyGrades(stuSelection);
     }
 }
