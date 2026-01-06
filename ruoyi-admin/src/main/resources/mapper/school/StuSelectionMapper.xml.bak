@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.school.mapper.StuSelectionMapper">
+
+    <resultMap type="StuSelection" id="StuSelectionResult">
+        <result property="selectionId" column="selection_id" />
+        <result property="studentId" column="student_id" />
+        <result property="classId" column="class_id" />
+        <result property="courseName" column="course_name" />
+        <result property="teacherName" column="teacher_name" />
+        <result property="classTime" column="class_time" />
+        <result property="classroomId" column="classroom_id" />
+        <result property="capacity" column="capacity" />
+        <result property="selectedNum" column="selected_num" />
+        <result property="isSelected" column="is_selected" />
+    </resultMap>
+
+    <select id="selectStuSelectionList" parameterType="StuSelection" resultMap="StuSelectionResult">
+        SELECT
+        /* 1. 凡是没在下面 GROUP BY 里的字段，必须全部加 MAX() 躲避 MySQL 报错 */
+        MAX(c.class_id) as class_id,
+        c.course_id,
+        MAX(co.course_name) as course_name,
+        c.semester,
+        MAX(u.nick_name) as teacher_name,
+        c.staff_id as teacher_id,
+        c.class_section,
+
+        /* 2. 将这门课所有分散的时间和教室拼在一起 */
+        GROUP_CONCAT(DISTINCT CONCAT('周', c.day_of_week, ' 第', c.lesson_start, '-', c.lesson_end, '节')
+        ORDER BY c.day_of_week SEPARATOR ' | ') as class_time,
+        GROUP_CONCAT(DISTINCT c.classroom_id SEPARATOR ' / ') as classroom_id,
+
+        /* 3. 统计这组课的容量和已选人数 */
+        MAX(c.capacity) as capacity,
+        MAX(c.selected_num) as selected_num,
+
+        /* 4. 只要这组课里任何一节被当前学生选了，整个“父亲课”就显示已选 */
+        MAX(CASE WHEN s.selection_id IS NOT NULL THEN 1 ELSE 0 END) as is_selected,
+        MAX(s.selection_id) as selection_id
+        FROM stu_class c
+        INNER JOIN stu_course co ON c.course_id = co.course_id
+        INNER JOIN sys_user u ON c.staff_id = u.user_name
+        /* 核心：只关联当前学生的选课，防止人数翻倍 */
+        LEFT JOIN stu_selection s ON c.class_id = s.class_id AND s.student_id = #{studentId}
+        <where>
+            <if test="courseName != null and courseName != ''"> AND co.course_name LIKE concat('%', #{courseName}, '%')</if>
+            <if test="teacherName != null and teacherName != ''"> AND u.nick_name LIKE concat('%', #{teacherName}, '%')</if>
+        </where>
+        /* 5. 按照这四个维度进行聚合，这就是你的“虚拟父亲课” */
+        GROUP BY c.course_id, c.staff_id, c.class_section, c.semester
+        /* 6. 如果是"我的课表"查询，只返回已选的课程 */
+        <if test="params.onlyMy != null and params.onlyMy == '1'">
+        HAVING MAX(CASE WHEN s.selection_id IS NOT NULL THEN 1 ELSE 0 END) = 1
+        </if>
+        ORDER BY class_id DESC
+    </select>
+
+    <insert id="insertStuSelection" parameterType="StuSelection" useGeneratedKeys="true" keyProperty="selectionId">
+        insert into stu_selection (student_id, class_id, create_time)
+        values (#{studentId}, #{classId}, sysdate())
+    </insert>
+
+    <delete id="deleteStuSelectionBySelectionIds" parameterType="Long">
+        delete from stu_selection where selection_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.school.mapper.StuSelectionMapper">
+
+    <resultMap type="StuSelection" id="StuSelectionResult">
+        <result property="selectionId" column="selection_id" />
+        <result property="studentId"   column="student_id" />
+        <result property="classId"     column="class_id" />
+        <result property="courseId"    column="course_id" />
+        <result property="staffId"     column="staff_id" />
+        <result property="semester"    column="semester" />
+        <result property="classSection" column="class_section" />
+        <result property="classroomId" column="classroom_id" />
+        <result property="courseName"  column="course_name" />
+        <result property="teacherName" column="teacher_name" />
+        <result property="classTime"   column="class_time" />
+        <result property="capacity"    column="capacity" />
+        <result property="selectedNum" column="selected_num" />
+        <result property="isSelected"  column="is_selected" />
+    </resultMap>
+
+    <!-- 查找超额的学生ID -->
+    <select id="selectOverCapacitySelectionIds" resultType="Long">
+        SELECT selection_id FROM (
+                                     SELECT s.selection_id,
+                                            ROW_NUMBER() OVER (PARTITION BY s.class_id ORDER BY RAND()) as rn,
+                                         c.capacity
+                                     FROM stu_selection s
+                                              JOIN stu_class c ON s.class_id = c.class_id
+                                     WHERE c.is_primary = 1
+                                 ) t WHERE t.rn > t.capacity
+    </select>
+
+    <select id="selectMySchedule" resultMap="StuSelectionResult">
+        SELECT
+            MIN(s.selection_id) as selection_id,
+            s.student_id,
+            c.course_id,
+            c.staff_id,
+            c.semester,
+            c.class_section,
+            MAX(co.course_name) as course_name,
+            MAX(u.nick_name) as teacher_name,
+            GROUP_CONCAT(DISTINCT CONCAT('周', c.day_of_week, ' 第', c.lesson_start, '-', c.lesson_end, '节') ORDER BY c.day_of_week SEPARATOR ' | ') as class_time,
+            GROUP_CONCAT(DISTINCT c.classroom_id SEPARATOR ' / ') as classroom_id,
+            MAX(c.capacity) as capacity,
+            MAX(c.selected_num) as selected_num,
+            1 as is_selected
+        FROM stu_selection s
+                 INNER JOIN stu_class c ON s.class_id = c.class_id
+                 INNER JOIN stu_course co ON c.course_id = co.course_id
+                 LEFT JOIN sys_user u ON c.staff_id = u.user_name
+        WHERE s.student_id = #{studentId}
+        GROUP BY s.student_id, c.course_id, c.staff_id, c.class_section, c.semester
+    </select>
+
+    <select id="selectStuSelectionList" parameterType="StuSelection" resultMap="StuSelectionResult">
+        SELECT
+        c.class_id,
+        c.course_id,
+        c.semester,
+        c.staff_id,
+        c.classroom_id,
+        c.class_section,
+        c.capacity,
+        c.selected_num,
+        co.course_name,
+        u.nick_name as teacher_name,
+        (SELECT GROUP_CONCAT(CONCAT('周', sc.day_of_week, ' 第', sc.lesson_start, '-', sc.lesson_end, '节') SEPARATOR ' | ')
+        FROM stu_class sc
+        WHERE sc.course_id = c.course_id AND sc.class_section = c.class_section
+        AND sc.semester = c.semester AND sc.staff_id = c.staff_id
+        ) as class_time,
+        (CASE WHEN s.selection_id IS NOT NULL THEN 1 ELSE 0 END) as is_selected,
+        s.selection_id
+        FROM stu_class c
+        INNER JOIN stu_course co ON c.course_id = co.course_id
+        LEFT JOIN sys_user u ON c.staff_id = u.user_name
+        LEFT JOIN stu_selection s ON c.class_id = s.class_id AND s.student_id = #{studentId}
+        <where>
+            c.is_primary = 1
+            <if test="courseName != null and courseName != ''"> AND co.course_name LIKE concat('%', #{courseName}, '%')</if>
+            <if test="teacherName != null and teacherName != ''"> AND u.nick_name LIKE concat('%', #{teacherName}, '%')</if>
+        </where>
+        ORDER BY c.class_id DESC
+    </select>
+
+    <select id="checkAlreadySelected" resultType="int">
+        SELECT COUNT(1) FROM stu_selection WHERE student_id = #{studentId} AND class_id = #{classId}
+    </select>
+
+    <insert id="insertStuSelection" parameterType="StuSelection" useGeneratedKeys="true" keyProperty="selectionId">
+        insert into stu_selection (student_id, class_id) values (#{studentId}, #{classId})
+    </insert>
+
+    <delete id="deleteStuSelectionBySelectionIds" parameterType="Long">
+        delete from stu_selection where selection_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <delete id="deleteStuSelectionBySelectionId" parameterType="Long">
+        delete from stu_selection where selection_id = #{selectionId}
+    </delete>
+
+    <select id="selectStuSelectionBySelectionId" parameterType="Long" resultMap="StuSelectionResult">
+        SELECT selection_id, student_id, class_id, normal_score, test_score, total_score
+        FROM stu_selection
+        WHERE selection_id = #{selectionId}
+    </select>
+
+    <select id="selectStudentsByClassId" parameterType="Long" resultType="StuSelection">
+        SELECT
+            s.selection_id AS selectionId,
+            s.student_id AS studentId,
+            s.class_id AS classId,
+            s.normal_score AS normalScore,
+            s.test_score AS testScore,
+            s.total_score AS totalScore,
+            u.nick_name AS studentName
+        FROM stu_selection s
+                 LEFT JOIN sys_user u ON s.student_id = u.user_name
+        WHERE s.class_id = #{classId}
+        ORDER BY s.student_id
+    </select>
+
+    <update id="updateStuSelection" parameterType="StuSelection">
+        update stu_selection
+        <set>
+            <if test="normalScore != null">normal_score = #{normalScore},</if>
+            <if test="testScore != null">test_score = #{testScore},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
+        </set>
+        where selection_id = #{selectionId}
+    </update>
+</mapper>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.school.mapper.StuDepartmentMapper">
+
+    <resultMap type="StuDepartment" id="StuDepartmentResult">
+        <result property="deptId"    column="dept_id"    />
+        <result property="deptName"    column="dept_name"    />
+        <result property="address"    column="address"    />
+        <result property="phoneCode"    column="phone_code"    />
+    </resultMap>
+
+    <sql id="selectStuDepartmentVo">
+        select dept_id, dept_name, address, phone_code from stu_department
+    </sql>
+
+    <!-- 查询院系列表 -->
+    <select id="selectStuDepartmentList" parameterType="StuDepartment" resultMap="StuDepartmentResult">
+        <include refid="selectStuDepartmentVo"/>
+        <where>
+            <if test="deptName != null  and deptName != ''"> and dept_name like concat('%', #{deptName}, '%')</if>
+            <if test="address != null  and address != ''"> and address = #{address}</if>
+            <if test="phoneCode != null  and phoneCode != ''"> and phone_code = #{phoneCode}</if>
+        </where>
+    </select>
+
+    <!-- 根据院系号查询 -->
+    <select id="selectStuDepartmentByDeptId" parameterType="String" resultMap="StuDepartmentResult">
+        <include refid="selectStuDepartmentVo"/>
+        where dept_id = #{deptId}
+    </select>
+
+    <!-- 新增院系：支持手动输入 dept_id -->
+    <insert id="insertStuDepartment" parameterType="StuDepartment">
+        insert into stu_department
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="deptId != null">dept_id,</if>
+            <if test="deptName != null and deptName != ''">dept_name,</if>
+            <if test="address != null">address,</if>
+            <if test="phoneCode != null">phone_code,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="deptId != null">#{deptId},</if>
+            <if test="deptName != null and deptName != ''">#{deptName},</if>
+            <if test="address != null">#{address},</if>
+            <if test="phoneCode != null">#{phoneCode},</if>
+        </trim>
+    </insert>
+
+    <!-- 修改院系 -->
+    <update id="updateStuDepartment" parameterType="StuDepartment">
+        update stu_department
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="deptName != null and deptName != ''">dept_name = #{deptName},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="phoneCode != null">phone_code = #{phoneCode},</if>
+        </trim>
+        where dept_id = #{deptId}
+    </update>
+
+    <!-- 删除院系 -->
+    <delete id="deleteStuDepartmentByDeptId" parameterType="String">
+        delete from stu_department where dept_id = #{deptId}
+    </delete>
+
+    <!-- 批量删除院系 -->
+    <delete id="deleteStuDepartmentByDeptIds" parameterType="String">
+        delete from stu_department where dept_id in
+        <foreach item="deptId" collection="array" open="(" separator="," close=")">
+            #{deptId}
+        </foreach>
+    </delete>
+</mapper>

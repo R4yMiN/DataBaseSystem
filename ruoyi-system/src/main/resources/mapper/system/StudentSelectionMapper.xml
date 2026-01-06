@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.school.mapper.StudentSelectionMapper">
+
+    <resultMap type="com.ruoyi.school.domain.StudentSelection" id="StudentSelectionResult">
+        <id     property="id"            column="id" />
+        <result property="studentId"     column="student_id" />
+        <result property="studentName"   column="student_name" />
+        <result property="courseId"      column="course_id" />
+        <result property="courseName"    column="course_name" />
+        <result property="teacherId"     column="teacher_id" />
+        <result property="teacherName"   column="teacher_name" />
+        <result property="semester"      column="semester" />
+        <result property="classTime"     column="class_time" />
+        <result property="classPlace"    column="class_place" />
+        <result property="capacity"      column="capacity" />
+        <result property="selectedNum"   column="selected_num" />
+        <result property="remainCapacity" column="remain_capacity" />
+        <result property="status"        column="status" />
+        <result property="isSelected"    column="is_selected" />
+        <result property="createTime"    column="create_time" />
+        <result property="updateTime"    column="update_time" />
+    </resultMap>
+
+    <sql id="selectStudentSelectionVo">
+        select id, student_id, student_name, course_id, course_name, teacher_id, teacher_name,
+               semester, class_time, class_place, capacity, selected_num, remain_capacity,
+               status, is_selected, create_time, update_time
+        from student_selection
+    </sql>
+
+    <select id="selectStudentSelectionList" parameterType="com.ruoyi.school.domain.StudentSelection" resultMap="StudentSelectionResult">
+        <include refid="selectStudentSelectionVo"/>
+        <where>
+            <if test="studentId != null and studentId != ''"> and student_id = #{studentId}</if>
+            <if test="studentName != null and studentName != ''"> and student_name like concat('%', #{studentName}, '%')</if>
+            <if test="courseId != null and courseId != ''"> and course_id = #{courseId}</if>
+            <if test="courseName != null and courseName != ''"> and course_name like concat('%', #{courseName}, '%')</if>
+            <if test="teacherId != null and teacherId != ''"> and teacher_id = #{teacherId}</if>
+            <if test="teacherName != null and teacherName != ''"> and teacher_name like concat('%', #{teacherName}, '%')</if>
+            <if test="semester != null and semester != ''"> and semester = #{semester}</if>
+            <if test="status != null"> and status = #{status}</if>
+        </where>
+    </select>
+
+    <select id="selectStudentSelectionById" parameterType="Long" resultMap="StudentSelectionResult">
+        <include refid="selectStudentSelectionVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertStudentSelection" parameterType="com.ruoyi.school.domain.StudentSelection">
+        insert into student_selection
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null and studentId != ''">student_id,</if>
+            <if test="studentName != null and studentName != ''">student_name,</if>
+            <if test="courseId != null and courseId != ''">course_id,</if>
+            <if test="courseName != null and courseName != ''">course_name,</if>
+            <if test="teacherId != null and teacherId != ''">teacher_id,</if>
+            <if test="teacherName != null and teacherName != ''">teacher_name,</if>
+            <if test="semester != null and semester != ''">semester,</if>
+            <if test="classTime != null and classTime != ''">class_time,</if>
+            <if test="classPlace != null and classPlace != ''">class_place,</if>
+            <if test="capacity != null">capacity,</if>
+            <if test="selectedNum != null">selected_num,</if>
+            <if test="remainCapacity != null">remain_capacity,</if>
+            <if test="status != null">status,</if>
+            <if test="isSelected != null">is_selected,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null and studentId != ''">#{studentId},</if>
+            <if test="studentName != null and studentName != ''">#{studentName},</if>
+            <if test="courseId != null and courseId != ''">#{courseId},</if>
+            <if test="courseName != null and courseName != ''">#{courseName},</if>
+            <if test="teacherId != null and teacherId != ''">#{teacherId},</if>
+            <if test="teacherName != null and teacherName != ''">#{teacherName},</if>
+            <if test="semester != null and semester != ''">#{semester},</if>
+            <if test="classTime != null and classTime != ''">#{classTime},</if>
+            <if test="classPlace != null and classPlace != ''">#{classPlace},</if>
+            <if test="capacity != null">#{capacity},</if>
+            <if test="selectedNum != null">#{selectedNum},</if>
+            <if test="remainCapacity != null">#{remainCapacity},</if>
+            <if test="status != null">#{status},</if>
+            <if test="isSelected != null">#{isSelected},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateStudentSelection" parameterType="com.ruoyi.school.domain.StudentSelection">
+        update student_selection
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null and studentId != ''">student_id = #{studentId},</if>
+            <if test="studentName != null and studentName != ''">student_name = #{studentName},</if>
+            <if test="courseId != null and courseId != ''">course_id = #{courseId},</if>
+            <if test="courseName != null and courseName != ''">course_name = #{courseName},</if>
+            <if test="teacherId != null and teacherId != ''">teacher_id = #{teacherId},</if>
+            <if test="teacherName != null and teacherName != ''">teacher_name = #{teacherName},</if>
+            <if test="semester != null and semester != ''">semester = #{semester},</if>
+            <if test="classTime != null and classTime != ''">class_time = #{classTime},</if>
+            <if test="classPlace != null and classPlace != ''">class_place = #{classPlace},</if>
+            <if test="capacity != null">capacity = #{capacity},</if>
+            <if test="selectedNum != null">selected_num = #{selectedNum},</if>
+            <if test="remainCapacity != null">remain_capacity = #{remainCapacity},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="isSelected != null">is_selected = #{isSelected},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteStudentSelectionById" parameterType="Long">
+        delete from student_selection where id = #{id}
+    </delete>
+
+    <delete id="deleteStudentSelectionByIds" parameterType="Long">
+        delete from student_selection where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="selectCourse">
+        update student_selection
+        set is_selected = 1,
+            status = 1,
+            student_id = #{studentId},
+            student_name = #{studentName},
+            selected_num = ifnull(selected_num, 0) + 1,
+            remain_capacity = ifnull(remain_capacity, 0) - 1,
+            update_time = now()
+        where id = #{id}
+          and (is_selected is null or is_selected != 1)
+          and ifnull(remain_capacity, 0) &gt; 0
+    </update>
+
+    <update id="unselectCourse" parameterType="Long">
+        update student_selection
+        set is_selected = 0,
+            status = 0,
+            student_id = null,
+            student_name = null,
+            selected_num = case when ifnull(selected_num, 0) &gt; 0 then ifnull(selected_num, 0) - 1 else 0 end,
+            remain_capacity = ifnull(remain_capacity, 0) + 1,
+            update_time = now()
+        where id = #{id}
+          and ifnull(is_selected, 0) = 1
+    </update>
+
+    <!-- 检查时间冲突：查询该学生已选课程中是否存在相同时间段的课程 -->
+    <select id="checkTimeConflict" resultType="int">
+        select count(1) from student_selection
+        where student_id = #{studentId}
+          and is_selected = 1
+          and semester = #{semester}
+          and class_time = #{classTime}
+          and id != #{id}
+    </select>
+
+    <!-- 查询学生已选课程列表 -->
+    <select id="selectMySchedule" resultMap="StudentSelectionResult">
+        <include refid="selectStudentSelectionVo"/>
+        where student_id = #{studentId} and is_selected = 1
+        order by class_time
+    </select>
+</mapper>

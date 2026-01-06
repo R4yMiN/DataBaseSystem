@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.school.mapper.StuClassMapper">
+
+    <resultMap type="StuClass" id="StuClassResult">
+        <result property="classId"       column="class_id"    />
+        <result property="semester"      column="semester"    />
+        <result property="courseId"      column="course_id"   />
+        <result property="classSection"  column="class_section" />
+        <result property="staffId"       column="staff_id"    />
+        <result property="dayOfWeek"     column="day_of_week" />
+        <result property="lessonStart"   column="lesson_start" />
+        <result property="lessonEnd"     column="lesson_end"  />
+        <result property="classroomId"   column="classroom_id" />
+        <result property="capacity"      column="capacity"    />
+        <result property="selectedNum"   column="selected_num" />
+        <result property="isPrimary"     column="is_primary"  />
+        <result property="courseName"    column="course_name" />
+        <result property="staffName"     column="staff_name"  />
+    </resultMap>
+
+    <select id="selectStuClassList" parameterType="StuClass" resultMap="StuClassResult">
+        select * from vw_class_full_info
+        <where>
+            <if test="courseId != null  and courseId != ''"> and course_id = #{courseId}</if>
+            <if test="staffId != null  and staffId != ''"> and staff_id = #{staffId}</if>
+            <if test="semester != null  and semester != ''"> and semester = #{semester}</if>
+            <if test="classSection != null  and classSection != ''"> and class_section = #{classSection}</if>
+            <if test="isPrimary != null"> and is_primary = #{isPrimary}</if>
+        </where>
+        order by class_id desc
+    </select>
+
+    <!-- 核心：随机踢人SQL。原理：按班级分组随机排序，序号超过容量的学生被删除 -->
+    <delete id="executeRandomKick">
+        DELETE FROM stu_selection
+        WHERE selection_id IN (
+            SELECT selection_id FROM (
+                                         SELECT s.selection_id,
+                                                ROW_NUMBER() OVER (PARTITION BY s.class_id ORDER BY RAND()) as rn,
+                                             c.capacity
+                                         FROM stu_selection s
+                                                  JOIN stu_class c ON s.class_id = c.class_id
+                                         WHERE c.is_primary = 1
+                                     ) t WHERE t.rn > t.capacity
+        )
+    </delete>
+
+    <select id="existsDuplicateStuClass" parameterType="StuClass" resultType="int">
+        select count(*) from stu_class
+        where semester = #{semester} and course_id = #{courseId} and staff_id = #{staffId}
+        and class_section = #{classSection} and day_of_week = #{dayOfWeek}
+        <if test="classId != null"> and class_id != #{classId} </if>
+    </select>
+
+    <select id="checkSchedulingConflict" parameterType="StuClass" resultType="int">
+        select count(*) from stu_class
+        <where>
+            semester = #{semester} and day_of_week = #{dayOfWeek}
+            and lesson_start &lt;= #{lessonEnd} and lesson_end &gt;= #{lessonStart}
+            and (classroom_id = #{classroomId} or staff_id = #{staffId})
+            <if test="classId != null"> and class_id != #{classId} </if>
+        </where>
+    </select>
+
+    <select id="selectAllCourseOptions" resultType="map">
+        select course_id as courseId, course_name as courseName from stu_course
+    </select>
+
+    <select id="selectAllClassroomOptions" resultType="map">
+        select classroom_id as classroomId, room_name as roomName from stu_classroom order by LENGTH(room_name), room_name
+    </select>
+
+    <select id="selectStuClassByClassId" parameterType="Long" resultMap="StuClassResult">
+        select * from vw_class_full_info where class_id = #{classId}
+    </select>
+
+    <insert id="insertStuClass" parameterType="StuClass" useGeneratedKeys="true" keyProperty="classId">
+        insert into stu_class (
+            semester, course_id, class_section, staff_id, day_of_week,
+            lesson_start, lesson_end, classroom_id, capacity, is_primary
+        ) values (
+                     #{semester}, #{courseId}, #{classSection}, #{staffId}, #{dayOfWeek},
+                     #{lessonStart}, #{lessonEnd}, #{classroomId}, #{capacity}, #{isPrimary}
+                 )
+    </insert>
+
+    <update id="updateStuClass" parameterType="StuClass">
+        update stu_class
+        <set>
+            <if test="dayOfWeek != null">day_of_week = #{dayOfWeek},</if>
+            <if test="lessonStart != null">lesson_start = #{lessonStart},</if>
+            <if test="lessonEnd != null">lesson_end = #{lessonEnd},</if>
+            <if test="classroomId != null">classroom_id = #{classroomId},</if>
+            <if test="capacity != null">capacity = #{capacity},</if>
+            <if test="isPrimary != null">is_primary = #{isPrimary},</if>
+        </set>
+        where class_id = #{classId}
+    </update>
+
+    <delete id="deleteStuClassByClassIds" parameterType="Long">
+        delete from stu_class where class_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+</mapper>

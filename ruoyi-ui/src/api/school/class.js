@@ -1,0 +1,60 @@
+import request from '@/utils/request'
+
+// 查询开课列表
+export function listClass(query) {
+  return request({
+    url: '/school/class/list',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询开课详细
+export function getClass(classId) {
+  return request({
+    url: '/school/class/' + classId,
+    method: 'get'
+  })
+}
+
+// 新增开课
+export function addClass(data) {
+  return request({
+    url: '/school/class',
+    method: 'post',
+    data: data
+  })
+}
+
+// 修改开课
+export function updateClass(data) {
+  return request({
+    url: '/school/class',
+    method: 'put',
+    data: data
+  })
+}
+
+// 删除开课
+export function delClass(classId) {
+  return request({
+    url: '/school/class/' + classId,
+    method: 'delete'
+  })
+}
+
+// 随机抽签踢人
+export function executeRandomKick() {
+  return request({
+    url: '/school/class/randomKick',
+    method: 'post'
+  })
+}
+
+// 获取教室列表
+export function listClassroom() {
+  return request({
+    url: '/school/class/classroomList',
+    method: 'get'
+  })
+}
